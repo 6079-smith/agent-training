@@ -1,0 +1,150 @@
+import { neon } from '@neondatabase/serverless';
+import dotenv from 'dotenv';
+import { fileURLToPath } from 'url';
+import { dirname, join } from 'path';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+
+dotenv.config({ path: join(__dirname, '../../.env') });
+
+console.log('Connecting to database...');
+const sql = neon(process.env.NEON_DATABASE_URL);
+
+const migrations = [
+  `CREATE TABLE IF NOT EXISTS knowledge_base (
+    id SERIAL PRIMARY KEY,
+    category VARCHAR(100) NOT NULL,
+    key VARCHAR(255) NOT NULL,
+    value TEXT NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(category, key)
+  )`,
+  `CREATE TABLE IF NOT EXISTS prompt_versions (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
+    system_prompt TEXT NOT NULL,
+    user_prompt TEXT NOT NULL,
+    is_active BOOLEAN DEFAULT false,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    notes TEXT
+  )`,
+  `CREATE TABLE IF NOT EXISTS test_cases (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
+    email_thread TEXT NOT NULL,
+    customer_email VARCHAR(255),
+    customer_name VARCHAR(255),
+    subject VARCHAR(500),
+    order_number VARCHAR(100),
+    expected_behavior TEXT,
+    tags TEXT[],
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+  )`,
+  `CREATE TABLE IF NOT EXISTS test_results (
+    id SERIAL PRIMARY KEY,
+    test_case_id INTEGER REFERENCES test_cases(id) ON DELETE CASCADE,
+    prompt_version_id INTEGER REFERENCES prompt_versions(id) ON DELETE CASCADE,
+    agent_response TEXT NOT NULL,
+    evaluator_score INTEGER CHECK (evaluator_score >= 1 AND evaluator_score <= 10),
+    evaluator_reasoning TEXT,
+    rule_checks JSONB,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+  )`,
+  `CREATE TABLE IF NOT EXISTS evaluator_rules (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
+    description TEXT,
+    check_prompt TEXT NOT NULL,
+    is_active BOOLEAN DEFAULT true,
+    priority INTEGER DEFAULT 0,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+  )`,
+  `CREATE TABLE IF NOT EXISTS wizard_progress (
+    id SERIAL PRIMARY KEY,
+    current_step INTEGER DEFAULT 0,
+    completed BOOLEAN DEFAULT false,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+  )`,
+  `CREATE INDEX IF NOT EXISTS idx_test_results_test_case ON test_results(test_case_id)`,
+  `CREATE INDEX IF NOT EXISTS idx_test_results_prompt_version ON test_results(prompt_version_id)`,
+  `CREATE INDEX IF NOT EXISTS idx_knowledge_base_category ON knowledge_base(category)`
+];
+
+async function runMigrations() {
+  console.log('Running database migrations...');
+  
+  try {
+    for (const migration of migrations) {
+      await sql(migration);
+    }
+    console.log('Migrations completed successfully!');
+    
+    // Seed default evaluator rules
+    await seedEvaluatorRules();
+    
+    console.log('Database setup complete!');
+  } catch (error) {
+    console.error('Migration error:', error);
+    throw error;
+  } finally {
+    // Neon serverless doesn't need explicit close
+  }
+}
+
+async function seedEvaluatorRules() {
+  const rules = [
+    {
+      name: 'Escalation on Refund Keywords',
+      description: 'Check if agent escalated when refund/cancel/money back keywords present',
+      check_prompt: 'Does the customer email contain keywords like "refund", "cancel", "money back", "wrong order", "missing item", "damaged"? If YES, did the agent response indicate escalation to a human team? Return PASS if escalated correctly or no keywords present, FAIL if keywords present but not escalated.'
+    },
+    {
+      name: 'Order Number Request',
+      description: 'Check if agent asked for order number when missing',
+      check_prompt: 'Does the customer email ask about an order but NOT provide an order number? If YES, did the agent ask for the order number? Return PASS if order number was provided OR agent asked for it, FAIL if order-related query without number and agent did not ask.'
+    },
+    {
+      name: 'No Hallucinated Capabilities',
+      description: 'Check if agent offered services that do not exist',
+      check_prompt: 'Did the agent offer any of these non-existent capabilities: "add to restock notification list", "contact courier on your behalf", "open investigation with DHL", "monitor parcel progress", "check shipping availability for your address"? Return PASS if none offered, FAIL if any offered.'
+    },
+    {
+      name: 'Attachment Acknowledgment',
+      description: 'Check if agent acknowledged attachments when present',
+      check_prompt: 'Does the customer email mention or include attachments/images? If YES, did the agent acknowledge receiving them? Return PASS if acknowledged or no attachments, FAIL if attachments present but not acknowledged.'
+    },
+    {
+      name: 'No Generic Mismatch Response',
+      description: 'Check if agent gave a generic response that does not match context',
+      check_prompt: "Did the agent respond with generic phrases like \"You are most welcome! I'm glad I could provide the information you needed\" when the customer did NOT ask a question or receive information? Return PASS if response matches context, FAIL if generic mismatch."
+    },
+    {
+      name: 'Appropriate Tone for Sentiment',
+      description: 'Check if agent matched tone to customer sentiment',
+      check_prompt: 'Is the customer frustrated (profanity, exclamation points, "unacceptable", "ridiculous")? If YES, did the agent open with empathy/apology? Return PASS if tone matched, FAIL if frustrated customer got no empathy.'
+    },
+    {
+      name: 'Confidence Acknowledgment',
+      description: 'Check if agent admitted uncertainty when lacking info',
+      check_prompt: 'Did the agent make definitive claims about things it could not know (specific dates, inventory levels, carrier actions) without qualifying uncertainty? Return PASS if appropriately uncertain or had data, FAIL if made unverifiable claims confidently.'
+    },
+    {
+      name: 'No Prohibited Offers',
+      description: 'Check if agent avoided offering prohibited actions',
+      check_prompt: 'Did the agent offer to: contact shipping courier, open immediate investigation, monitor parcel, frame delay as "problem with order" instead of "problem with shipping"? Return PASS if none offered, FAIL if any prohibited offer made.'
+    }
+  ];
+
+  for (const rule of rules) {
+    await sql`INSERT INTO evaluator_rules (name, description, check_prompt) 
+       VALUES (${rule.name}, ${rule.description}, ${rule.check_prompt}) 
+       ON CONFLICT DO NOTHING`;
+  }
+  
+  console.log('Seeded evaluator rules');
+}
+
+runMigrations();
