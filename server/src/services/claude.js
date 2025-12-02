@@ -7,6 +7,9 @@ const anthropic = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY,
 });
 
+// Default to Claude Sonnet 4 if not specified
+const CLAUDE_MODEL = process.env.CLAUDE_MODEL || 'claude-sonnet-4-20250514';
+
 /**
  * Generate a response using Claude as the CS Agent
  */
@@ -19,7 +22,7 @@ export async function generateAgentResponse(systemPrompt, userPrompt, emailThrea
 
   try {
     const response = await anthropic.messages.create({
-      model: 'claude-sonnet-4-20250514',
+      model: CLAUDE_MODEL,
       max_tokens: 2000,
       system: systemPrompt,
       messages: [
@@ -88,7 +91,7 @@ Evaluate this response now.`;
 
   try {
     const response = await anthropic.messages.create({
-      model: 'claude-sonnet-4-20250514',
+      model: CLAUDE_MODEL,
       max_tokens: 2000,
       system: evaluatorSystemPrompt,
       messages: [
@@ -145,7 +148,7 @@ Format: STATUS: <reason>`;
 
   try {
     const response = await anthropic.messages.create({
-      model: 'claude-sonnet-4-20250514',
+      model: CLAUDE_MODEL,
       max_tokens: 200,
       system: systemPrompt,
       messages: [
@@ -245,7 +248,7 @@ REMINDER: The test case above is for understanding WHY the prompt failed. DO NOT
 
   try {
     const response = await anthropic.messages.create({
-      model: 'claude-sonnet-4-20250514',
+      model: CLAUDE_MODEL,
       max_tokens: 4000,
       system: improvementSystemPrompt,
       messages: [
