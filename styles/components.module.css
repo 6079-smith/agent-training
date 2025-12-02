@@ -1,0 +1,956 @@
+/**
+ * Shared Component Styles
+ * 
+ * This file contains reusable styles for common UI patterns.
+ * Import as: import styles from '@/styles/components.module.css'
+ */
+
+/* =============================================================================
+   SECTION / CARD CONTAINER
+   Used for grouping related content (filters, tables, etc.)
+   ============================================================================= */
+
+.section {
+  background: var(--card);
+  border: 1px solid var(--card-border);
+  border-radius: 8px;
+  padding: var(--space-4);
+}
+
+.sectionNoPadding {
+  background: var(--card);
+  border: 1px solid var(--card-border);
+  border-radius: 8px;
+  padding: 0;
+  overflow: hidden;
+}
+
+.sectionHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--space-3);
+}
+
+.sectionTitle {
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--text);
+  margin: 0;
+}
+
+/* =============================================================================
+   FILTERS
+   Horizontal filter bar with dropdowns, inputs, and buttons
+   ============================================================================= */
+
+.filtersContainer {
+  display: flex;
+  gap: var(--space-3);
+  margin-bottom: var(--space-4);
+  flex-wrap: wrap;
+  align-items: flex-end;
+}
+
+.headerActions {
+  display: flex;
+  gap: 12px;
+}
+
+.filterGroup {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.select {
+  padding: 8px 12px;
+  height: 42px;
+  line-height: 1;
+  box-sizing: border-box;
+  margin: 0;
+  background: transparent;
+  border: 1px solid var(--card-border);
+  border-radius: 4px;
+  color: var(--text);
+  font-size: 14px;
+  cursor: pointer;
+  transition: border-color 0.2s;
+  vertical-align: middle;
+  min-width: 140px;
+}
+
+.select:focus {
+  outline: none;
+  border-color: #3b82f6;
+}
+
+.input {
+  padding: 8px 12px;
+  height: 42px;
+  line-height: 1;
+  box-sizing: border-box;
+  margin: 0;
+  background: transparent;
+  border: 1px solid var(--card-border);
+  border-radius: 4px;
+  color: var(--text);
+  font-size: 14px;
+  transition: border-color 0.2s;
+  vertical-align: middle;
+}
+
+.input:focus {
+  outline: none;
+  border-color: #3b82f6;
+}
+
+.input::placeholder {
+  color: var(--muted);
+}
+
+/* Date Input - Dark theme with white calendar icon */
+.dateInput {
+  padding: 6px 8px;
+  background: #1a1d23;
+  border: 1px solid #343741;
+  border-radius: 4px;
+  color: #fff;
+  font-size: 13px;
+  color-scheme: dark;
+}
+
+.dateInput::-webkit-calendar-picker-indicator {
+  filter: invert(1);
+  cursor: pointer;
+}
+
+/* =============================================================================
+   SEARCH BOX (Canonical)
+   Search input with integrated icon inside the input field
+   ============================================================================= */
+
+.searchBox {
+  position: relative;
+  flex: 1;
+}
+
+.searchIcon {
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #6b7280;
+  pointer-events: none;
+}
+
+.searchInput {
+  width: 100%;
+  height: 42px;
+  padding: 10px 12px 10px 40px;
+  box-sizing: border-box;
+  background: #1e2128;
+  border: 1px solid var(--card-border);
+  border-radius: 4px;
+  color: var(--text);
+  font-size: 14px;
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+.searchInput:focus {
+  border-color: #3b82f6;
+  outline: none;
+}
+
+.searchInput::placeholder {
+  color: var(--muted);
+}
+
+/* =============================================================================
+   STATS PANEL / SUMMARY CARDS
+   Row of stat cards showing key metrics
+   ============================================================================= */
+
+.statsContainer {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.statCard {
+  padding: 12px 16px;
+  background: var(--card);
+  border: 1px solid var(--card-border);
+  border-radius: 8px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+}
+
+.statLabel {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--muted);
+}
+
+.statValue {
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.statValueLarge {
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.statHint {
+  font-size: 12px;
+  color: var(--muted);
+  margin-top: 4px;
+}
+
+/* Stat value color variants */
+.statValueOk,
+.statValueSuccess {
+  font-size: 18px;
+  font-weight: 600;
+  color: #10b981;
+}
+
+.statValueWarning {
+  font-size: 18px;
+  font-weight: 600;
+  color: #f59e0b;
+}
+
+.statValueError,
+.statValueDanger {
+  font-size: 18px;
+  font-weight: 600;
+  color: #ef4444;
+}
+
+.statValueInfo,
+.statValuePrimary {
+  font-size: 18px;
+  font-weight: 600;
+  color: #6366f1;
+}
+
+/* =============================================================================
+   INFO ROW
+   Row between filters and table showing item count and date range
+   ============================================================================= */
+
+.infoRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 2px 16px;
+  margin-top: 8px;
+  margin-bottom: 8px;
+  font-size: 14px;
+  color: #a0aec0;
+}
+
+.infoRow strong {
+  color: var(--text);
+}
+
+.infoRowHighlight {
+  color: #10b981;
+  font-weight: 600;
+}
+
+.infoRowLeft {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+/* =============================================================================
+   TEXT UTILITIES
+   ============================================================================= */
+
+.textMuted {
+  color: #a0aec0;
+  font-size: 0.875rem;
+}
+
+.textPrimary {
+  color: #4a90e2;
+}
+
+.textSuccess {
+  color: #22c55e;
+  font-size: 16px;
+}
+
+.textError {
+  color: #ef4444;
+  font-size: 16px;
+}
+
+.textWarning {
+  color: #f59e0b;
+}
+
+/* =============================================================================
+   CHECKBOX LABEL
+   ============================================================================= */
+
+.checkboxLabel {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  font-size: 0.875rem;
+  color: #e0e8f0;
+}
+
+.checkboxLabel input {
+  cursor: pointer;
+}
+
+/* =============================================================================
+   TABLE HEADER BAR
+   Header inside table section with sync status and action buttons
+   ============================================================================= */
+
+.tableHeader {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--card-border);
+  position: relative;
+}
+
+.tableHeaderCenter {
+  display: flex;
+  justify-content: center;
+  flex: 1;
+}
+
+.tableHeaderRight {
+  position: absolute;
+  right: 16px;
+}
+
+/* =============================================================================
+   TOGGLE SWITCH
+   On/off toggle for boolean options
+   ============================================================================= */
+
+.toggleContainer {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.toggle {
+  position: relative;
+  width: 44px;
+  height: 24px;
+  background: var(--card-border);
+  border: none;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.toggle.active {
+  background: #3b82f6;
+}
+
+.toggle::after {
+  content: '';
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 20px;
+  height: 20px;
+  background: white;
+  border-radius: 50%;
+  transition: transform 0.2s;
+}
+
+.toggle.active::after {
+  transform: translateX(20px);
+}
+
+.toggleLabel {
+  font-size: 14px;
+  color: var(--text);
+}
+
+/* =============================================================================
+   LOADING STATE
+   Centered spinner with message
+   ============================================================================= */
+
+.loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 48px;
+  color: var(--muted);
+  gap: 12px;
+}
+
+.loading svg {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* =============================================================================
+   EMPTY STATE
+   Centered message when no data
+   ============================================================================= */
+
+.emptyState {
+  text-align: center;
+  padding: 48px 24px;
+  color: var(--muted);
+}
+
+.emptyState svg {
+  margin-bottom: 16px;
+  opacity: 0.5;
+}
+
+.emptyState p {
+  margin: 0;
+  font-size: 16px;
+}
+
+/* =============================================================================
+   ERROR ALERT
+   Dismissible error message banner
+   ============================================================================= */
+
+.errorAlert {
+  padding: 12px 16px;
+  margin-bottom: 24px;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: rgba(244, 67, 54, 0.15);
+  border: 1px solid rgba(244, 67, 54, 0.5);
+  color: #ff6b6b;
+}
+
+.errorAlertIcon {
+  flex-shrink: 0;
+}
+
+.errorAlertMessage {
+  flex: 1;
+}
+
+.errorAlertDismiss {
+  background: none;
+  border: none;
+  color: #ff6b6b;
+  cursor: pointer;
+  padding: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.errorAlertDismiss:hover {
+  opacity: 0.8;
+}
+
+/* Success Alert */
+.successAlert {
+  padding: 12px 16px;
+  margin-bottom: 24px;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: rgba(16, 185, 129, 0.15);
+  border: 1px solid rgba(16, 185, 129, 0.5);
+  color: #10b981;
+}
+
+/* =============================================================================
+   STATUS BADGES
+   Inline status indicators
+   ============================================================================= */
+
+.statusBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.statusBadge.ok {
+  background: #d1fae5;
+  color: #065f46;
+}
+
+.statusBadge.warning {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.statusBadge.error {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+/* Status icons in table cells */
+.statusOk {
+  color: #22c55e;
+}
+
+.statusWarning {
+  color: #f59e0b;
+}
+
+.statusError {
+  color: #ef4444;
+}
+
+/* =============================================================================
+   TABS
+   Tab navigation for switching between views
+   ============================================================================= */
+
+.tabs {
+  display: flex;
+  gap: 0;
+  margin-bottom: 16px;
+  border-bottom: 1px solid var(--card-border);
+}
+
+.tab {
+  padding: 12px 24px;
+  background: transparent;
+  border: none;
+  border-bottom: 2px solid transparent;
+  color: #a0aec0;
+  font-weight: 400;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-size: 14px;
+}
+
+.tab:hover {
+  color: #e0e8f0;
+}
+
+.tabActive {
+  border-bottom-color: #4693d1;
+  color: #fff;
+  font-weight: 600;
+}
+
+/* =============================================================================
+   ACTION BUTTONS ROW
+   Flex container for action buttons in table cells
+   ============================================================================= */
+
+.actionsRow {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+}
+
+/* =============================================================================
+   MODAL/DIALOG
+   ============================================================================= */
+
+.modalOverlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 20px;
+}
+
+.modal {
+  background: var(--card);
+  border: 1px solid var(--card-border);
+  border-radius: 8px;
+  max-width: 600px;
+  width: 100%;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+}
+
+.modalHeader {
+  padding: 20px 24px;
+  border-bottom: 1px solid var(--card-border);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.modalTitle {
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--text);
+  margin: 0;
+}
+
+.modalClose {
+  background: none;
+  border: none;
+  color: var(--muted);
+  cursor: pointer;
+  padding: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: color 0.2s;
+}
+
+.modalClose:hover {
+  color: var(--text);
+}
+
+.modalBody {
+  padding: 24px;
+}
+
+.modalFooter {
+  padding: 16px 24px;
+  border-top: 1px solid var(--card-border);
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+}
+
+/* =============================================================================
+   DIMMED/EXCLUDED ROWS
+   ============================================================================= */
+
+.dimmedRow {
+  opacity: 0.5;
+}
+
+.excludedRow {
+  opacity: 0.4;
+  text-decoration: line-through;
+}
+
+/* =============================================================================
+   RESPONSIVE
+   ============================================================================= */
+
+@media (max-width: 768px) {
+  .statsContainer {
+    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  }
+
+  .filtersContainer {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .filterGroup {
+    width: 100%;
+  }
+
+  .select,
+  .input {
+    width: 100%;
+  }
+
+  .infoRow {
+    flex-direction: column;
+    gap: 4px;
+    text-align: center;
+  }
+
+  .modalHeader {
+    padding: 16px 20px;
+  }
+
+  .modalBody {
+    padding: 20px;
+  }
+
+  .modalFooter {
+    padding: 12px 20px;
+    flex-direction: column-reverse;
+  }
+
+  .modalFooter button {
+    width: 100%;
+  }
+}
+
+@media (max-width: 480px) {
+  .statsContainer {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+/* ============================================
+   DASHBOARD & ACTION CARDS
+   ============================================ */
+
+.cardGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 20px;
+  margin-top: 20px;
+}
+
+.actionCard {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 30px 20px;
+  background: var(--card-bg);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  text-decoration: none;
+  color: var(--text-primary);
+  transition: all 0.2s ease;
+  cursor: pointer;
+}
+
+.actionCard:hover {
+  border-color: var(--link-color);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  transform: translateY(-2px);
+}
+
+.actionCard svg {
+  color: var(--link-color);
+  margin-bottom: 16px;
+}
+
+.actionCard h3 {
+  margin: 0 0 8px 0;
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.actionCard p {
+  margin: 0;
+  font-size: 14px;
+  color: var(--text-muted);
+  text-align: center;
+}
+
+.workflowList {
+  list-style: none;
+  counter-reset: workflow-counter;
+  padding: 0;
+  margin: 20px 0 0 0;
+}
+
+.workflowList li {
+  counter-increment: workflow-counter;
+  position: relative;
+  padding: 16px 16px 16px 50px;
+  margin-bottom: 12px;
+  background: var(--card-bg);
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+}
+
+.workflowList li::before {
+  content: counter(workflow-counter);
+  position: absolute;
+  left: 16px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 28px;
+  height: 28px;
+  background: var(--link-color);
+  color: white;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  font-size: 14px;
+}
+
+.workflowList li strong {
+  color: var(--text-primary);
+}
+
+/* ============================================
+   MODAL STYLES
+   ============================================ */
+
+.modalOverlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 20px;
+}
+
+.modal {
+  background: var(--card-bg);
+  border-radius: 8px;
+  width: 100%;
+  max-height: 90vh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+}
+
+.modalSmall {
+  max-width: 400px;
+}
+
+.modalMedium {
+  max-width: 600px;
+}
+
+.modalLarge {
+  max-width: 900px;
+}
+
+/* ============================================
+   LOADING & SPINNER
+   ============================================ */
+
+.loadingContainer {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 60px 20px;
+  gap: 16px;
+}
+
+.spinner {
+  border: 3px solid var(--border-color);
+  border-top-color: var(--link-color);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+.spinnerSmall {
+  width: 20px;
+  height: 20px;
+  border-width: 2px;
+}
+
+.spinnerMedium {
+  width: 40px;
+  height: 40px;
+}
+
+.spinnerLarge {
+  width: 60px;
+  height: 60px;
+  border-width: 4px;
+}
+
+.loadingMessage {
+  color: var(--text-muted);
+  font-size: 14px;
+  margin: 0;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* ============================================
+   STATS CARD
+   ============================================ */
+
+.statsCard {
+  background: var(--card-bg);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.statsCardHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.statsCardTitle {
+  font-size: 14px;
+  color: var(--text-muted);
+  font-weight: 500;
+}
+
+.statsCardIcon {
+  color: var(--link-color);
+}
+
+.statsCardValue {
+  font-size: 32px;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.statsCardTrend {
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.trendPositive {
+  color: var(--success-color);
+}
+
+.trendNegative {
+  color: var(--danger-color);
+}

@@ -1,0 +1,511 @@
+/**
+ * Layout Styles
+ * Page structure, navigation, and containers
+ */
+
+/* =============================================================================
+   PAGE CONTAINER
+   ============================================================================= */
+
+.pageContainer {
+  min-height: 100vh;
+  background: var(--bg);
+  color: var(--text);
+}
+
+.pageWrapper {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: var(--space-4);
+}
+
+.pageWrapperNarrow {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: var(--space-4);
+}
+
+.pageWrapperWide {
+  max-width: 1600px;
+  margin: 0 auto;
+  padding: var(--space-4);
+}
+
+/* =============================================================================
+   PAGE HEADER
+   ============================================================================= */
+
+.pageHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--space-4);
+  padding-bottom: var(--space-3);
+  border-bottom: 1px solid var(--card-border);
+}
+
+.pageTitle {
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--text);
+  margin: 0;
+}
+
+.pageSubtitle {
+  font-size: 14px;
+  color: var(--muted);
+  margin-top: 4px;
+}
+
+.pageActions {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+/* =============================================================================
+   PAGE CONTENT
+   ============================================================================= */
+
+.pageContent {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+/* =============================================================================
+   SIDEBAR LAYOUT
+   ============================================================================= */
+
+.layoutWithSidebar {
+  display: grid;
+  grid-template-columns: 260px 1fr;
+  gap: var(--space-4);
+  min-height: 100vh;
+}
+
+.sidebar {
+  background: var(--card);
+  border-right: 1px solid var(--card-border);
+  padding: var(--space-4);
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  overflow-y: auto;
+}
+
+.sidebarNav {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.sidebarNavItem {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  border-radius: 6px;
+  color: var(--muted);
+  text-decoration: none;
+  font-size: 14px;
+  font-weight: 500;
+  transition: all 0.2s;
+  cursor: pointer;
+}
+
+.sidebarNavItem:hover {
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--text);
+}
+
+.sidebarNavItemActive {
+  background: rgba(74, 144, 226, 0.15);
+  color: #4a90e2;
+  font-weight: 600;
+}
+
+.sidebarSection {
+  margin-bottom: var(--space-4);
+}
+
+.sidebarSectionTitle {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 8px;
+  padding: 0 16px;
+}
+
+.mainContent {
+  padding: var(--space-4);
+  overflow-x: auto;
+}
+
+/* =============================================================================
+   NAVIGATION BAR
+   ============================================================================= */
+
+.navbar {
+  background: var(--card);
+  border-bottom: 1px solid var(--card-border);
+  padding: 0 var(--space-4);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+.navbarContent {
+  max-width: 1400px;
+  margin: 0 auto;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  height: 64px;
+}
+
+.navbarBrand {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--text);
+  text-decoration: none;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.navbarLinks {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.navbarLink {
+  padding: 8px 16px;
+  border-radius: 4px;
+  color: var(--muted);
+  text-decoration: none;
+  font-size: 14px;
+  font-weight: 500;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.navbarLink:hover {
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--text);
+}
+
+.navbarLinkActive {
+  background: rgba(74, 144, 226, 0.15);
+  color: #4a90e2;
+  font-weight: 600;
+}
+
+/* =============================================================================
+   GRID LAYOUTS
+   ============================================================================= */
+
+.grid {
+  display: grid;
+  gap: var(--space-4);
+}
+
+.gridCols2 {
+  grid-template-columns: repeat(2, 1fr);
+}
+
+.gridCols3 {
+  grid-template-columns: repeat(3, 1fr);
+}
+
+.gridCols4 {
+  grid-template-columns: repeat(4, 1fr);
+}
+
+.gridAutoFit {
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+}
+
+/* =============================================================================
+   FLEX UTILITIES
+   ============================================================================= */
+
+.flexRow {
+  display: flex;
+  gap: var(--space-3);
+  align-items: center;
+}
+
+.flexCol {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.flexBetween {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.flexCenter {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.flexEnd {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+}
+
+.flexWrap {
+  flex-wrap: wrap;
+}
+
+.flexGrow {
+  flex: 1;
+}
+
+/* =============================================================================
+   SPACING UTILITIES
+   ============================================================================= */
+
+.mt1 {
+  margin-top: var(--space-1);
+}
+.mt2 {
+  margin-top: var(--space-2);
+}
+.mt3 {
+  margin-top: var(--space-3);
+}
+.mt4 {
+  margin-top: var(--space-4);
+}
+
+.mb1 {
+  margin-bottom: var(--space-1);
+}
+.mb2 {
+  margin-bottom: var(--space-2);
+}
+.mb3 {
+  margin-bottom: var(--space-3);
+}
+.mb4 {
+  margin-bottom: var(--space-4);
+}
+
+.gap1 {
+  gap: var(--space-1);
+}
+.gap2 {
+  gap: var(--space-2);
+}
+.gap3 {
+  gap: var(--space-3);
+}
+.gap4 {
+  gap: var(--space-4);
+}
+
+/* =============================================================================
+   CARD LAYOUTS
+   ============================================================================= */
+
+.cardGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: var(--space-4);
+}
+
+.card {
+  background: var(--card);
+  border: 1px solid var(--card-border);
+  border-radius: 8px;
+  padding: var(--space-4);
+}
+
+.cardHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--space-3);
+  padding-bottom: var(--space-2);
+  border-bottom: 1px solid var(--card-border);
+}
+
+.cardTitle {
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--text);
+  margin: 0;
+}
+
+.cardBody {
+  color: var(--text);
+}
+
+.cardFooter {
+  margin-top: var(--space-3);
+  padding-top: var(--space-3);
+  border-top: 1px solid var(--card-border);
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+}
+
+/* =============================================================================
+   SPLIT PANE
+   ============================================================================= */
+
+.splitPane {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-4);
+  height: 100%;
+}
+
+.splitPaneLeft {
+  overflow-y: auto;
+}
+
+.splitPaneRight {
+  overflow-y: auto;
+}
+
+/* =============================================================================
+   BREADCRUMBS
+   ============================================================================= */
+
+.breadcrumbs {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: var(--space-3);
+  font-size: 14px;
+}
+
+.breadcrumbItem {
+  color: var(--muted);
+  text-decoration: none;
+  transition: color 0.2s;
+}
+
+.breadcrumbItem:hover {
+  color: var(--text);
+}
+
+.breadcrumbSeparator {
+  color: var(--muted);
+}
+
+.breadcrumbActive {
+  color: var(--text);
+  font-weight: 500;
+}
+
+/* =============================================================================
+   DIVIDER
+   ============================================================================= */
+
+.divider {
+  height: 1px;
+  background: var(--card-border);
+  margin: var(--space-4) 0;
+}
+
+.dividerVertical {
+  width: 1px;
+  background: var(--card-border);
+  height: 100%;
+}
+
+/* =============================================================================
+   RESPONSIVE
+   ============================================================================= */
+
+@media (max-width: 1024px) {
+  .layoutWithSidebar {
+    grid-template-columns: 1fr;
+  }
+
+  .sidebar {
+    display: none;
+  }
+
+  .gridCols4 {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .gridCols3 {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 768px) {
+  .pageWrapper,
+  .pageWrapperNarrow,
+  .pageWrapperWide {
+    padding: var(--space-3);
+  }
+
+  .pageHeader {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--space-2);
+  }
+
+  .pageActions {
+    width: 100%;
+    justify-content: stretch;
+  }
+
+  .pageActions button {
+    flex: 1;
+  }
+
+  .gridCols2,
+  .gridCols3,
+  .gridCols4 {
+    grid-template-columns: 1fr;
+  }
+
+  .splitPane {
+    grid-template-columns: 1fr;
+  }
+
+  .flexRow {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .navbarNav {
+    display: none;
+  }
+
+  .cardGrid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 480px) {
+  .pageTitle {
+    font-size: 24px;
+  }
+
+  .navbar {
+    padding: 0 var(--space-2);
+  }
+
+  .navbarContent {
+    height: 56px;
+  }
+}

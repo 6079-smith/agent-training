@@ -1,0 +1,427 @@
+/**
+ * Form Styles
+ * Reusable form components and layouts
+ */
+
+/* =============================================================================
+   FORM LAYOUT
+   ============================================================================= */
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.formGroup {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.formRow {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: var(--space-3);
+}
+
+.formActions {
+  display: flex;
+  gap: 12px;
+  justify-content: flex-end;
+  margin-top: var(--space-3);
+  padding-top: var(--space-3);
+  border-top: 1px solid var(--card-border);
+}
+
+.formActionsLeft {
+  display: flex;
+  gap: 12px;
+  justify-content: flex-start;
+  margin-top: var(--space-3);
+}
+
+.formActionsCenter {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+  margin-top: var(--space-3);
+}
+
+/* =============================================================================
+   LABELS
+   ============================================================================= */
+
+.label {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text);
+  margin-bottom: 4px;
+}
+
+.labelRequired::after {
+  content: ' *';
+  color: #ef4444;
+}
+
+.labelMuted {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* =============================================================================
+   INPUTS
+   ============================================================================= */
+
+.input {
+  padding: 10px 12px;
+  background: transparent;
+  border: 1px solid var(--card-border);
+  border-radius: 4px;
+  color: var(--text);
+  font-size: 14px;
+  transition: border-color 0.2s;
+  font-family: inherit;
+}
+
+.input:focus {
+  outline: none;
+  border-color: #3b82f6;
+}
+
+.input::placeholder {
+  color: var(--muted);
+}
+
+.input:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.inputError {
+  border-color: #ef4444;
+}
+
+.inputError:focus {
+  border-color: #ef4444;
+  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.1);
+}
+
+.inputSmall {
+  padding: 6px 10px;
+  font-size: 13px;
+}
+
+.inputLarge {
+  padding: 12px 14px;
+  font-size: 16px;
+}
+
+/* =============================================================================
+   TEXTAREA
+   ============================================================================= */
+
+.textarea {
+  padding: 10px 12px;
+  background: transparent;
+  border: 1px solid var(--card-border);
+  border-radius: 4px;
+  color: var(--text);
+  font-size: 14px;
+  transition: border-color 0.2s;
+  font-family: inherit;
+  resize: vertical;
+  min-height: 100px;
+}
+
+.textarea:focus {
+  outline: none;
+  border-color: #3b82f6;
+}
+
+.textarea::placeholder {
+  color: var(--muted);
+}
+
+.textarea:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.textareaError {
+  border-color: #ef4444;
+}
+
+.textareaLarge {
+  min-height: 200px;
+}
+
+/* =============================================================================
+   SELECT
+   ============================================================================= */
+
+.select {
+  padding: 10px 12px;
+  background: transparent;
+  border: 1px solid var(--card-border);
+  border-radius: 4px;
+  color: var(--text);
+  font-size: 14px;
+  cursor: pointer;
+  transition: border-color 0.2s;
+  font-family: inherit;
+}
+
+.select:focus {
+  outline: none;
+  border-color: #3b82f6;
+}
+
+.select:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.selectError {
+  border-color: #ef4444;
+}
+
+/* =============================================================================
+   CHECKBOX & RADIO
+   ============================================================================= */
+
+.checkbox,
+.radio {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+}
+
+.checkbox input,
+.radio input {
+  cursor: pointer;
+  width: 18px;
+  height: 18px;
+  accent-color: #4a90e2;
+}
+
+.checkbox label,
+.radio label {
+  cursor: pointer;
+  font-size: 14px;
+  color: var(--text);
+  user-select: none;
+}
+
+.checkboxGroup,
+.radioGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+/* =============================================================================
+   HELP TEXT & ERROR MESSAGES
+   ============================================================================= */
+
+.helpText {
+  font-size: 13px;
+  color: var(--muted);
+  margin-top: 4px;
+}
+
+.errorText {
+  font-size: 13px;
+  color: #ef4444;
+  margin-top: 4px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.successText {
+  font-size: 13px;
+  color: #10b981;
+  margin-top: 4px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+/* =============================================================================
+   INPUT WITH ICON
+   ============================================================================= */
+
+.inputWithIcon {
+  position: relative;
+}
+
+.inputWithIcon input {
+  padding-left: 40px;
+}
+
+.inputIcon {
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--muted);
+  pointer-events: none;
+}
+
+.inputIconRight {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--muted);
+}
+
+/* =============================================================================
+   INPUT GROUP (with addon)
+   ============================================================================= */
+
+.inputGroup {
+  display: flex;
+  align-items: stretch;
+}
+
+.inputGroupAddon {
+  padding: 10px 12px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--card-border);
+  border-right: none;
+  border-radius: 4px 0 0 4px;
+  color: var(--muted);
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+}
+
+.inputGroup input {
+  border-radius: 0 4px 4px 0;
+}
+
+/* =============================================================================
+   FILE INPUT
+   ============================================================================= */
+
+.fileInput {
+  display: none;
+}
+
+.fileInputLabel {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 16px;
+  background: transparent;
+  border: 1px solid var(--card-border);
+  border-radius: 4px;
+  color: var(--text);
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.fileInputLabel:hover {
+  border-color: #4a90e2;
+  background: rgba(74, 144, 226, 0.1);
+}
+
+.fileInputName {
+  font-size: 13px;
+  color: var(--muted);
+  margin-top: 4px;
+}
+
+/* =============================================================================
+   SWITCH/TOGGLE
+   ============================================================================= */
+
+.switch {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.switchInput {
+  position: relative;
+  width: 44px;
+  height: 24px;
+  background: var(--card-border);
+  border: none;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: background 0.2s;
+  appearance: none;
+}
+
+.switchInput:checked {
+  background: #4a90e2;
+}
+
+.switchInput::after {
+  content: '';
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 20px;
+  height: 20px;
+  background: white;
+  border-radius: 50%;
+  transition: transform 0.2s;
+}
+
+.switchInput:checked::after {
+  transform: translateX(20px);
+}
+
+.switchLabel {
+  font-size: 14px;
+  color: var(--text);
+  cursor: pointer;
+}
+
+/* =============================================================================
+   FIELDSET
+   ============================================================================= */
+
+.fieldset {
+  border: 1px solid var(--card-border);
+  border-radius: 4px;
+  padding: var(--space-3);
+  margin-bottom: var(--space-3);
+}
+
+.legend {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text);
+  padding: 0 8px;
+}
+
+/* =============================================================================
+   RESPONSIVE
+   ============================================================================= */
+
+@media (max-width: 768px) {
+  .formRow {
+    grid-template-columns: 1fr;
+  }
+
+  .formActions {
+    flex-direction: column-reverse;
+  }
+
+  .formActions button {
+    width: 100%;
+  }
+}

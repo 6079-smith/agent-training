@@ -1,0 +1,391 @@
+/**
+ * Centralized Button Styles
+ * Shared across all components to ensure consistency
+ */
+
+/* Primary Action Button (Blue) */
+.btnPrimary {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  background-color: #4a90e2;
+  color: #ffffff;
+  border: none;
+  border-radius: 4px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btnPrimary:hover:not(:disabled) {
+  background-color: #357abd;
+  box-shadow: 0 4px 12px rgba(74, 144, 226, 0.3);
+}
+
+.btnPrimary:active:not(:disabled) {
+  box-shadow: 0 2px 6px rgba(74, 144, 226, 0.2);
+}
+
+.btnPrimary:disabled {
+  background-color: #666666;
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+/* Success Action Button (Green) */
+.btnSuccess {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  background-color: #469b3b;
+  color: #ffffff;
+  border: none;
+  border-radius: 4px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btnSuccess:hover:not(:disabled) {
+  background-color: #3d8430;
+  box-shadow: 0 4px 12px rgba(70, 155, 59, 0.3);
+}
+
+.btnSuccess:active:not(:disabled) {
+  box-shadow: 0 2px 6px rgba(70, 155, 59, 0.2);
+}
+
+.btnSuccess:disabled {
+  background-color: #666666;
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+/* Danger Button (Red) */
+.btnDanger {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  background-color: #d9534f;
+  color: #ffffff;
+  border: none;
+  border-radius: 4px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btnDanger:hover:not(:disabled) {
+  background-color: #c9302c;
+  box-shadow: 0 4px 12px rgba(217, 83, 79, 0.3);
+}
+
+.btnDanger:active:not(:disabled) {
+  box-shadow: 0 2px 6px rgba(217, 83, 79, 0.2);
+}
+
+.btnDanger:disabled {
+  background-color: #666666;
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+/* Secondary Button (Outlined) */
+.btnSecondary {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  background: transparent;
+  color: #4693d1;
+  border: 1px solid #4693d1;
+  border-radius: 4px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btnSecondary:hover:not(:disabled) {
+  background: rgba(70, 147, 209, 0.1);
+  box-shadow: 0 4px 12px rgba(70, 147, 209, 0.2);
+}
+
+.btnSecondary:active:not(:disabled) {
+  box-shadow: 0 2px 6px rgba(70, 147, 209, 0.1);
+}
+
+.btnSecondary:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Full Width Button (for forms) */
+.btnBlock {
+  width: 100%;
+  padding: 12px 16px;
+  background-color: #4a90e2;
+  color: #ffffff;
+  border: none;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-sizing: border-box;
+}
+
+.btnBlock:hover:not(:disabled) {
+  background-color: #357abd;
+  box-shadow: 0 4px 12px rgba(74, 144, 226, 0.3);
+}
+
+.btnBlock:active:not(:disabled) {
+  box-shadow: 0 2px 6px rgba(74, 144, 226, 0.2);
+}
+
+.btnBlock:disabled {
+  background-color: #666666;
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+/* Small Button (compact) */
+.btnSmall {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  background-color: #4a90e2;
+  color: #ffffff;
+  border: none;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btnSmall:hover:not(:disabled) {
+  background-color: #357abd;
+  box-shadow: 0 2px 8px rgba(74, 144, 226, 0.2);
+}
+
+.btnSmall:active:not(:disabled) {
+  box-shadow: 0 1px 4px rgba(74, 144, 226, 0.1);
+}
+
+.btnSmall:disabled {
+  background-color: #666666;
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+/* Icon Button (for action icons in tables) */
+.btnIcon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 6px 8px;
+  background: transparent;
+  border: 1px solid #4a5568;
+  border-radius: 4px;
+  color: #a0aec0;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btnIcon:hover:not(:disabled) {
+  border-color: #4693d1;
+  color: #4693d1;
+  background: rgba(70, 147, 209, 0.1);
+}
+
+.btnIcon:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Icon Button Variants - color shows on hover only */
+.btnIconEdit {
+  composes: btnIcon;
+}
+
+.btnIconEdit:hover:not(:disabled) {
+  border-color: #4693d1;
+  color: #4693d1;
+  background: rgba(70, 147, 209, 0.1);
+}
+
+.btnIconView {
+  composes: btnIcon;
+}
+
+.btnIconView:hover:not(:disabled) {
+  border-color: #8b5cf6;
+  color: #8b5cf6;
+  background: rgba(139, 92, 246, 0.1);
+}
+
+.btnIconDownload {
+  composes: btnIcon;
+}
+
+.btnIconDownload:hover:not(:disabled) {
+  border-color: #10b981;
+  color: #10b981;
+  background: rgba(16, 185, 129, 0.1);
+}
+
+.btnIconDelete {
+  composes: btnIcon;
+}
+
+.btnIconDelete:hover:not(:disabled) {
+  border-color: #ef4444;
+  color: #ef4444;
+  background: rgba(239, 68, 68, 0.1);
+}
+
+.btnIconGhost {
+  composes: btnIcon;
+}
+
+.btnIconGhost:hover:not(:disabled) {
+  border-color: #a0aec0;
+  color: #a0aec0;
+  background: rgba(160, 174, 192, 0.1);
+}
+
+/* Icon-only Add button - green on hover */
+.btnIconAdd {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 6px;
+  background: transparent;
+  border: none;
+  border-radius: 4px;
+  color: #6b7280;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btnIconAdd:hover:not(:disabled) {
+  color: #10b981;
+  background: rgba(16, 185, 129, 0.1);
+}
+
+.btnIconAdd:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Icon-only Delete button - red on hover (no border) */
+.btnIconDeleteNoBorder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4px;
+  background: transparent;
+  border: none;
+  border-radius: 4px;
+  color: #6b7280;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btnIconDeleteNoBorder:hover:not(:disabled) {
+  color: #ef4444;
+  background: rgba(239, 68, 68, 0.1);
+}
+
+.btnIconDeleteNoBorder:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Dashed Outline Button (for add actions) */
+.btnDashed {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  width: 100%;
+  padding: 8px 16px;
+  background: transparent;
+  border: 1px dashed #4693d1;
+  border-radius: 4px;
+  color: #4693d1;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btnDashed:hover:not(:disabled) {
+  background: rgba(70, 147, 209, 0.1);
+  border-color: #5ba3e1;
+}
+
+.btnDashed:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Small Success Button (for inline add actions) */
+.btnSuccessSmall {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 16px;
+  background-color: #10b981;
+  color: #ffffff;
+  border: none;
+  border-radius: 4px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btnSuccessSmall:hover:not(:disabled) {
+  background-color: #059669;
+}
+
+.btnSuccessSmall:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Ghost Button (minimal styling) */
+.btnGhost {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  background: transparent;
+  color: #a0aec0;
+  border: none;
+  border-radius: 4px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btnGhost:hover:not(:disabled) {
+  background: rgba(160, 174, 192, 0.1);
+  color: #e0e8f0;
+}
+
+.btnGhost:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}

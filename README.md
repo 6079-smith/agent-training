@@ -1,6 +1,6 @@
 # CS Agent Prompt Optimizer
 
-A local web application for optimizing your Make.com Customer Service Agent prompts through iterative testing and AI-powered evaluation.
+A Next.js web application for optimizing your Make.com Customer Service Agent prompts through iterative testing and AI-powered evaluation.
 
 ## Features
 
@@ -17,17 +17,25 @@ A local web application for optimizing your Make.com Customer Service Agent prom
 ### 1. Install Dependencies
 
 ```bash
-npm run install:all
+npm install
 ```
 
 ### 2. Configure Environment
 
-The `.env` file in `/server` is already configured with your API keys.
+Create a `.env.local` file in the root directory:
+
+```bash
+# Database
+DATABASE_URL=your_postgresql_connection_string
+
+# Anthropic API
+ANTHROPIC_API_KEY=your_anthropic_api_key
+ANTHROPIC_MODEL=claude-opus-4-5
+```
 
 ### 3. Run Database Migrations
 
 ```bash
-cd server
 npm run db:migrate
 ```
 
@@ -37,7 +45,7 @@ npm run db:migrate
 npm run dev
 ```
 
-This starts both the backend (http://localhost:3001) and frontend (http://localhost:5173).
+This starts the Next.js development server at http://localhost:3000
 
 ## Usage Workflow
 
@@ -68,25 +76,33 @@ This starts both the backend (http://localhost:3001) and frontend (http://localh
 
 ## Tech Stack
 
-- **Frontend**: React + Vite + TailwindCSS
-- **Backend**: Node.js + Express
-- **Database**: Neon (Serverless Postgres)
-- **AI**: Claude 3.5 Sonnet (Anthropic)
+- **Framework**: Next.js 16 (App Router)
+- **Language**: TypeScript
+- **Database**: PostgreSQL (Neon)
+- **AI**: Claude (Anthropic)
+- **Styling**: CSS Modules + CSS Variables
+- **Icons**: Lucide React
 
 ## Project Structure
 
 ```
 agent-traning/
-├── client/                 # React frontend
-│   └── src/
-│       ├── pages/          # Page components
-│       └── lib/            # API client
-├── server/                 # Express backend
-│   └── src/
-│       ├── routes/         # API routes
-│       ├── services/       # Claude integration
-│       └── db/             # Database connection & migrations
-└── package.json            # Root package with dev scripts
+├── app/                    # Next.js App Router
+│   ├── layout.tsx          # Root layout
+│   ├── page.tsx            # Home page
+│   └── api/                # API routes
+├── lib/                    # Business logic
+│   └── db.ts               # Database connection
+├── components/             # React components
+├── styles/                 # CSS Modules
+│   └── theme.css           # Global styles & CSS variables
+├── types/                  # TypeScript types
+│   ├── database.ts         # Database models
+│   └── api.ts              # API response types
+├── scripts/                # Utility scripts
+│   └── migrate.js          # Database migrations
+├── public/                 # Static assets
+└── package.json            # Dependencies & scripts
 ```
 
 ## API Endpoints
