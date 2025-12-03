@@ -72,6 +72,95 @@
   letter-spacing: 0.5px;
 }
 
+/* Section label - prominent heading for form sections */
+.sectionLabel {
+  font-size: 18px;
+  font-weight: 700;
+  color: #3b82f6;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+}
+
+.sectionLabel::before {
+  content: '';
+  width: 4px;
+  height: 20px;
+  background: #3b82f6;
+  border-radius: 2px;
+}
+
+/* Form group with section styling */
+.formGroupSection {
+  display: flex;
+  flex-direction: column;
+  background: rgba(59, 130, 246, 0.05);
+  border-radius: 8px;
+  border: 1px solid rgba(59, 130, 246, 0.15);
+  margin-bottom: var(--space-3);
+  overflow: hidden;
+}
+
+/* Collapsible section header */
+.sectionHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-3);
+  cursor: pointer;
+  user-select: none;
+  transition: background 0.2s;
+}
+
+.sectionHeader:hover {
+  background: rgba(59, 130, 246, 0.1);
+}
+
+.sectionToggle {
+  color: #3b82f6;
+  transition: transform 0.3s ease;
+  flex-shrink: 0;
+}
+
+.sectionToggle.collapsed {
+  transform: rotate(-90deg);
+}
+
+/* Collapsible content */
+.sectionContent {
+  padding: 0 var(--space-3) var(--space-3) var(--space-3);
+  animation: slideDown 0.3s ease;
+}
+
+.sectionContent.collapsed {
+  display: none;
+}
+
+.sectionContent textarea,
+.sectionContent input {
+  width: 100%;
+  box-sizing: border-box;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Larger textarea for wizard */
+.textareaLarge {
+  min-height: 200px;
+}
+
 /* =============================================================================
    INPUTS
    ============================================================================= */
