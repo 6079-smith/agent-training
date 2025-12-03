@@ -1,4 +1,5 @@
 import '@/styles/theme.css'
+import layoutStyles from '@/styles/layout.module.css'
 import Navigation from '@/components/Navigation'
 import type { Metadata, Viewport } from 'next'
 import { ReactElement, ReactNode } from 'react'
@@ -23,8 +24,10 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body>
-        <Navigation />
-        <main>{children}</main>
+        <div className={layoutStyles.appContainer}>
+          <Navigation />
+          <main className={layoutStyles.mainContent}>{children}</main>
+        </div>
       </body>
     </html>
   )

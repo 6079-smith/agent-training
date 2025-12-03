@@ -17,8 +17,17 @@ interface DashboardStats {
   avgScore: number | null
 }
 
+interface RecentActivity {
+  id: number
+  type: 'result' | 'prompt' | 'testcase'
+  message: string
+  timestamp: string
+  status: 'success' | 'warning' | 'info'
+}
+
 export default function Home() {
   const [stats, setStats] = useState<DashboardStats | null>(null)
+  const [recentActivity, setRecentActivity] = useState<RecentActivity[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
@@ -62,6 +71,18 @@ export default function Home() {
         totalResults: results.length,
         avgScore: avgScore ? Math.round(avgScore) : null,
       })
+
+      // Build recent activity from results
+      const activity: RecentActivity[] = results
+        .slice(0, 5)
+        .map((r: any) => ({
+          id: r.id,
+          type: 'result' as const,
+          message: `Test completed with ${r.evaluator_score !== null ? r.evaluator_score + '%' : 'no'} score`,
+          timestamp: r.created_at,
+          status: r.evaluator_score >= 80 ? 'success' : r.evaluator_score >= 60 ? 'warning' : 'info',
+        }))
+      setRecentActivity(activity)
     } catch (err) {
       setError('Failed to load dashboard stats')
       console.error(err)
@@ -78,108 +99,114 @@ export default function Home() {
     )
   }
 
+  function getTimeAgo(timestamp: string) {
+    const now = new Date()
+    const then = new Date(timestamp)
+    const seconds = Math.floor((now.getTime() - then.getTime()) / 1000)
+    
+    if (seconds < 60) return 'Just now'
+    if (seconds < 3600) return `${Math.floor(seconds / 60)}m ago`
+    if (seconds < 86400) return `${Math.floor(seconds / 3600)}h ago`
+    return `${Math.floor(seconds / 86400)}d ago`
+  }
+
   return (
     <div className={layoutStyles.pageContainer}>
-      <div className={layoutStyles.pageHeader}>
-        <h1>Dashboard</h1>
-        <p className={styles.subtitle}>CS Agent Prompt Optimizer</p>
-      </div>
-
       {error && <ErrorAlert message={error} onDismiss={() => setError(null)} />}
 
       {stats && (
         <>
-          <div className={styles.statsPanel}>
-            <StatsCard
-              title="Total Prompts"
-              value={stats.totalPrompts}
-              icon={Icons.FileText}
-            />
-            <StatsCard
-              title="Test Cases"
-              value={stats.totalTestCases}
-              icon={Icons.TestTube}
-            />
-            <StatsCard
-              title="Test Results"
-              value={stats.totalResults}
-              icon={Icons.BarChart3}
-            />
-            <StatsCard
-              title="Avg Score"
-              value={stats.avgScore !== null ? `${stats.avgScore}%` : 'N/A'}
-              icon={Icons.TrendingUp}
-            />
+          {/* Header */}
+          <div className={styles.minimalHeader}>
+            <div>
+              <h1>Dashboard</h1>
+              {stats.activePrompt && (
+                <p className={styles.activePromptText}>
+                  <Icons.CheckCircle size={16} />
+                  Active: <strong>{stats.activePrompt}</strong>
+                </p>
+              )}
+            </div>
           </div>
 
-          {stats.activePrompt && (
-            <div className={styles.section}>
-              <div className={styles.infoRow}>
-                <Icons.CheckCircle size={20} className={styles.iconSuccess} />
-                <strong>Active Prompt:</strong>
-                <span>{stats.activePrompt}</span>
+          {/* Stats Row */}
+          <div className={styles.minimalStats}>
+            <div className={styles.minimalStatCard}>
+              <div className={styles.minimalStatValue}>{stats.totalPrompts}</div>
+              <div className={styles.minimalStatLabel}>Prompts</div>
+            </div>
+            <div className={styles.minimalStatCard}>
+              <div className={styles.minimalStatValue}>{stats.totalTestCases}</div>
+              <div className={styles.minimalStatLabel}>Test Cases</div>
+            </div>
+            <div className={styles.minimalStatCard}>
+              <div className={styles.minimalStatValue}>{stats.totalResults}</div>
+              <div className={styles.minimalStatLabel}>Results</div>
+            </div>
+            <div className={styles.minimalStatCard}>
+              <div className={styles.minimalStatValue}>
+                {stats.avgScore !== null ? `${stats.avgScore}%` : 'N/A'}
               </div>
-            </div>
-          )}
-
-          <div className={styles.section}>
-            <h2>Quick Start</h2>
-            <div className={styles.cardGrid}>
-              <Link href="/wizard" className={styles.actionCard}>
-                <Icons.Wand2 size={32} />
-                <h3>Training Wizard</h3>
-                <p>Teach the AI about your business context and policies</p>
-              </Link>
-
-              <Link href="/prompts" className={styles.actionCard}>
-                <Icons.FileText size={32} />
-                <h3>Manage Prompts</h3>
-                <p>Create and version control your system prompts</p>
-              </Link>
-
-              <Link href="/test-cases" className={styles.actionCard}>
-                <Icons.TestTube size={32} />
-                <h3>Test Cases</h3>
-                <p>Import email examples as repeatable test cases</p>
-              </Link>
-
-              <Link href="/playground" className={styles.actionCard}>
-                <Icons.Play size={32} />
-                <h3>Playground</h3>
-                <p>Test prompts and evaluate responses in real-time</p>
-              </Link>
-
-              <Link href="/results" className={styles.actionCard}>
-                <Icons.BarChart3 size={32} />
-                <h3>View Results</h3>
-                <p>Track scores and compare prompt versions</p>
-              </Link>
+              <div className={styles.minimalStatLabel}>Avg Score</div>
             </div>
           </div>
 
-          <div className={styles.section}>
-            <h2>Workflow</h2>
-            <ol className={styles.workflowList}>
-              <li>
-                <strong>Complete the Training Wizard</strong> - Teach the AI evaluator about your
-                business
-              </li>
-              <li>
-                <strong>Import Your Prompts</strong> - Add your current Make.com prompts
-              </li>
-              <li>
-                <strong>Add Test Cases</strong> - Import historical email examples
-              </li>
-              <li>
-                <strong>Test in Playground</strong> - Generate and evaluate responses
-              </li>
-              <li>
-                <strong>Iterate & Improve</strong> - Refine prompts based on feedback
-              </li>
-              <li>
-                <strong>Export to Make.com</strong> - Copy optimized prompts
-              </li>
-            </ol>
+          {/* Action Cards - Single Column */}
+          <div className={styles.minimalActions}>
+            <Link href="/wizard" className={styles.minimalCard}>
+              <div className={styles.minimalCardIcon}>
+                <Icons.Sparkles size={32} />
+              </div>
+              <div className={styles.minimalCardContent}>
+                <h2>Training Wizard</h2>
+                <p>Teach the AI evaluator about your business policies, tone, and guidelines</p>
+              </div>
+              <Icons.ArrowRight size={24} className={styles.minimalCardArrow} />
+            </Link>
+
+            <Link href="/prompts" className={styles.minimalCard}>
+              <div className={styles.minimalCardIcon}>
+                <Icons.FileText size={32} />
+              </div>
+              <div className={styles.minimalCardContent}>
+                <h2>Manage Prompts</h2>
+                <p>Create, edit, and version control your system prompts</p>
+              </div>
+              <Icons.ArrowRight size={24} className={styles.minimalCardArrow} />
+            </Link>
+
+            <Link href="/test-cases" className={styles.minimalCard}>
+              <div className={styles.minimalCardIcon}>
+                <Icons.Mail size={32} />
+              </div>
+              <div className={styles.minimalCardContent}>
+                <h2>Test Cases</h2>
+                <p>Import and organize email examples for repeatable testing</p>
+              </div>
+              <Icons.ArrowRight size={24} className={styles.minimalCardArrow} />
+            </Link>
+
+            <Link href="/playground" className={styles.minimalCard}>
+              <div className={styles.minimalCardIcon}>
+                <Icons.Play size={32} />
+              </div>
+              <div className={styles.minimalCardContent}>
+                <h2>Playground</h2>
+                <p>Test prompts in real-time with AI-powered generation and evaluation</p>
+              </div>
+              <Icons.ArrowRight size={24} className={styles.minimalCardArrow} />
+            </Link>
+
+            <Link href="/results" className={styles.minimalCard}>
+              <div className={styles.minimalCardIcon}>
+                <Icons.BarChart2 size={32} />
+              </div>
+              <div className={styles.minimalCardContent}>
+                <h2>View Results</h2>
+                <p>Analyze test results and compare prompt performance over time</p>
+              </div>
+              <Icons.ArrowRight size={24} className={styles.minimalCardArrow} />
+            </Link>
           </div>
         </>
       )}

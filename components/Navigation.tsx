@@ -21,29 +21,27 @@ export default function Navigation() {
   ]
 
   return (
-    <nav className={layoutStyles.navbar}>
-      <div className={layoutStyles.navbarContent}>
-        <div className={layoutStyles.navbarBrand}>
-          <Icons.Sparkles size={24} />
-          <span>CS Agent Optimizer</span>
-        </div>
-        <div className={layoutStyles.navbarLinks}>
-          {navItems.map((item) => {
-            const Icon = item.icon
-            return (
-              <Link
-                key={item.href}
-                href={item.href}
-                className={`${layoutStyles.navbarLink} ${
-                  isActive(item.href) ? layoutStyles.navbarLinkActive : ''
-                }`}
-              >
-                <Icon size={18} />
-                <span>{item.label}</span>
-              </Link>
-            )
-          })}
-        </div>
+    <nav className={layoutStyles.sidebar}>
+      <div className={layoutStyles.sidebarHeader}>
+        <Icons.Sparkles size={24} />
+        <span className={layoutStyles.sidebarTitle}>CS Agent Optimizer</span>
+      </div>
+      <div className={layoutStyles.sidebarNav}>
+        {navItems.map((item) => {
+          const Icon = item.icon
+          return (
+            <Link
+              key={item.href}
+              href={item.href}
+              className={`${layoutStyles.sidebarLink} ${
+                isActive(item.href) ? layoutStyles.sidebarLinkActive : ''
+              }`}
+            >
+              <Icon size={20} />
+              <span>{item.label}</span>
+            </Link>
+          )
+        })}
       </div>
     </nav>
   )
