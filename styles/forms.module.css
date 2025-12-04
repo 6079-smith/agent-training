@@ -278,6 +278,121 @@
   gap: 12px;
 }
 
+/* Add Step Row */
+.addStepRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.addStepLabel {
+  font-size: 14px;
+  color: #888;
+  white-space: nowrap;
+}
+
+.addStepInput {
+  width: 200px;
+  padding: 8px 12px;
+  background: transparent;
+  border: 1px solid var(--card-border);
+  border-radius: 4px;
+  color: var(--text);
+  font-size: 14px;
+}
+
+.addStepInput:focus {
+  outline: none;
+  border-color: #3b82f6;
+}
+
+.addStepRow button {
+  padding: 8px 12px !important;
+  white-space: nowrap;
+  flex-shrink: 0;
+  width: 80px !important;
+  min-width: 80px !important;
+  max-width: 80px !important;
+}
+
+/* Step Tab Drag Handle */
+.stepDragHandle {
+  cursor: grab;
+  color: #666;
+  padding: 2px;
+  display: flex;
+  align-items: center;
+  opacity: 0.5;
+  transition: opacity 0.2s;
+}
+
+.stepDragHandle:hover {
+  opacity: 1;
+  color: #3b82f6;
+}
+
+.stepDragHandle:active {
+  cursor: grabbing;
+}
+
+/* Step Tab Actions */
+.stepActions {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  margin-left: auto;
+  opacity: 0;
+  transition: opacity 0.2s;
+  flex-shrink: 0;
+}
+
+.stepIconButton {
+  background: transparent;
+  border: none;
+  color: #666;
+  padding: 4px;
+  border-radius: 4px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+}
+
+.stepIconButton:hover {
+  background: rgba(59, 130, 246, 0.2);
+  color: #3b82f6;
+}
+
+.stepIconButtonDanger:hover {
+  background: rgba(239, 68, 68, 0.2);
+  color: #ef4444;
+}
+
+/* Step Title Input (in step tab) */
+.stepTitleInput {
+  font-size: 12px;
+  padding: 2px 4px;
+  background: rgba(59, 130, 246, 0.1);
+  border: 1px solid #3b82f6;
+  border-radius: 4px;
+  color: var(--text);
+  width: 80px;
+}
+
+/* Form Title Input (main heading) */
+.formTitleInput {
+  font-size: 24px;
+  font-weight: 600;
+  padding: 4px 8px;
+  background: rgba(59, 130, 246, 0.1);
+  border: 2px solid #3b82f6;
+  border-radius: 6px;
+  color: var(--text);
+  flex: 1;
+  min-width: 200px;
+}
+
 /* =============================================================================
    INPUTS
    ============================================================================= */

@@ -1279,6 +1279,11 @@
    ============================================ */
 
 .wizardHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  flex-wrap: wrap;
+  gap: 16px;
   margin-bottom: 32px;
 }
 
@@ -1298,26 +1303,30 @@
 /* Wizard Steps Tabs */
 .wizardSteps {
   display: flex;
+  flex-wrap: wrap;
   gap: 8px;
   margin-bottom: 16px;
 }
 
 .wizardStepTab {
-  flex: 1;
+  flex: 0 0 auto;
   background: var(--card-bg);
   border: 1px solid var(--border-color);
   border-radius: 8px;
-  padding: 16px;
+  padding: 10px 12px;
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 8px;
   cursor: pointer;
   transition: all 0.2s ease;
+  position: relative;
 }
 
 .wizardStepTab:hover {
   border-color: #4a90e2;
 }
+
+/* Show step actions on hover - handled via inline styles in component */
 
 .wizardStepActive {
   border-color: #4a90e2;
@@ -1330,8 +1339,8 @@
 }
 
 .wizardStepNumber {
-  width: 32px;
-  height: 32px;
+  width: 24px;
+  height: 24px;
   border-radius: 50%;
   background: rgba(74, 144, 226, 0.1);
   color: #4a90e2;
@@ -1339,7 +1348,7 @@
   align-items: center;
   justify-content: center;
   font-weight: 600;
-  font-size: 14px;
+  font-size: 12px;
   flex-shrink: 0;
 }
 
@@ -1354,13 +1363,14 @@
 }
 
 .wizardStepInfo {
-  flex: 1;
+  flex: 0 0 auto;
 }
 
 .wizardStepTitle {
-  font-size: 14px;
+  font-size: 12px;
   font-weight: 500;
   color: var(--text-primary);
+  white-space: nowrap;
 }
 
 /* Progress Bar */

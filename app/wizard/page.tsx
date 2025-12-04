@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, ReactNode } from 'react'
+import { useState, useEffect } from 'react'
 import styles from '@/styles/components.module.css'
 import btnStyles from '@/styles/buttons.module.css'
 import formStyles from '@/styles/forms.module.css'
@@ -20,6 +20,7 @@ import {
   sortableKeyboardCoordinates,
   useSortable,
   verticalListSortingStrategy,
+  horizontalListSortingStrategy,
 } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
 
@@ -33,14 +34,130 @@ interface Question {
   sort_order: number
 }
 
-// Step configuration
-const STEPS = [
-  { id: 1, title: 'Business Basics', category: 'business', icon: Icons.Building2 },
-  { id: 2, title: 'Policies', category: 'policies', icon: Icons.FileText },
-  { id: 3, title: 'Capabilities', category: 'capabilities', icon: Icons.Zap },
-  { id: 4, title: 'Tone & Sign-offs', category: 'tone', icon: Icons.MessageSquare },
-  { id: 5, title: 'Failure Patterns', category: 'failures', icon: Icons.AlertTriangle },
-]
+interface Step {
+  id: number
+  title: string
+  category: string
+  sort_order: number
+}
+
+// Sortable Step Tab Component
+function SortableStepTab({
+  step,
+  index,
+  isActive,
+  onClick,
+  onEdit,
+  onDelete,
+}: {
+  step: Step
+  index: number
+  isActive: boolean
+  onClick: () => void
+  onEdit: (id: number, title: string) => void
+  onDelete: (id: number) => void
+}) {
+  const [isEditing, setIsEditing] = useState(false)
+  const [editedTitle, setEditedTitle] = useState(step.title)
+  const [isHovered, setIsHovered] = useState(false)
+
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: step.id })
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+  }
+
+  const handleSaveTitle = () => {
+    if (editedTitle.trim() && editedTitle !== step.title) {
+      onEdit(step.id, editedTitle.trim())
+    }
+    setIsEditing(false)
+  }
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      handleSaveTitle()
+    } else if (e.key === 'Escape') {
+      setEditedTitle(step.title)
+      setIsEditing(false)
+    }
+  }
+
+  return (
+    <div
+      ref={setNodeRef}
+      style={style}
+      className={`${styles.wizardStepTab} ${isActive ? styles.wizardStepActive : ''}`}
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
+    >
+      {/* Drag handle */}
+      <div {...attributes} {...listeners} className={formStyles.stepDragHandle}>
+        <Icons.GripVertical size={14} />
+      </div>
+
+      {/* Step number */}
+      <div className={styles.wizardStepNumber}>{index + 1}</div>
+
+      {/* Title */}
+      <div className={styles.wizardStepInfo} onClick={onClick}>
+        {isEditing ? (
+          <input
+            type="text"
+            value={editedTitle}
+            onChange={(e) => setEditedTitle(e.target.value)}
+            onBlur={handleSaveTitle}
+            onKeyDown={handleKeyDown}
+            className={formStyles.stepTitleInput}
+            autoFocus
+            onClick={(e) => e.stopPropagation()}
+          />
+        ) : (
+          <div className={styles.wizardStepTitle}>{step.title}</div>
+        )}
+      </div>
+
+      {/* Action buttons */}
+      <div 
+        className={formStyles.stepActions}
+        style={{ opacity: isHovered ? 1 : 0 }}
+      >
+        <button
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation()
+            setIsEditing(true)
+            setEditedTitle(step.title)
+          }}
+          className={formStyles.stepIconButton}
+          title="Edit step name"
+        >
+          <Icons.Pencil size={12} />
+        </button>
+        <button
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation()
+            onDelete(step.id)
+          }}
+          className={`${formStyles.stepIconButton} ${formStyles.stepIconButtonDanger}`}
+          title="Delete step"
+        >
+          <Icons.Trash2 size={12} />
+        </button>
+      </div>
+    </div>
+  )
+}
 
 // Sortable Question Component
 function SortableQuestion({
@@ -173,12 +290,16 @@ function SortableQuestion({
 }
 
 export default function WizardPage() {
-  const [currentStep, setCurrentStep] = useState(1)
+  const [steps, setSteps] = useState<Step[]>([])
+  const [currentStepIndex, setCurrentStepIndex] = useState(0)
   const [loading, setLoading] = useState(true)
   const [questions, setQuestions] = useState<Question[]>([])
-  const [savedQuestions, setSavedQuestions] = useState<Question[]>([]) // Track last saved state
+  const [savedQuestions, setSavedQuestions] = useState<Question[]>([])
   const [newQuestionTitle, setNewQuestionTitle] = useState('')
+  const [newStepTitle, setNewStepTitle] = useState('')
   const [saving, setSaving] = useState(false)
+  const [isEditingStepTitle, setIsEditingStepTitle] = useState(false)
+  const [editedStepTitle, setEditedStepTitle] = useState('')
 
   const sensors = useSensors(
     useSensor(PointerSensor),
@@ -187,8 +308,9 @@ export default function WizardPage() {
     })
   )
 
-  // Get current step's category
-  const currentCategory = STEPS[currentStep - 1].category
+  // Get current step
+  const currentStep = steps[currentStepIndex]
+  const currentCategory = currentStep?.category || ''
 
   // Filter questions for current step
   const currentQuestions = questions
@@ -198,37 +320,147 @@ export default function WizardPage() {
   // Check if current step has unsaved changes
   const hasUnsavedChanges = currentQuestions.some((q) => {
     const saved = savedQuestions.find((s) => s.id === q.id)
-    if (!saved) return true // New question not yet saved
+    if (!saved) return true
     return q.value !== saved.value || q.display_title !== saved.display_title || q.sort_order !== saved.sort_order
   })
 
-  // Load all questions from DB
+  // Load steps and questions from DB
   useEffect(() => {
-    async function loadQuestions() {
+    async function loadData() {
       try {
-        const res = await fetch('/api/knowledge')
-        if (!res.ok) throw new Error('Failed to fetch')
-        const { data } = await res.json()
-        const mapped = data.map((item: any) => ({
-          id: item.id,
-          category: item.category,
-          key: item.key,
-          value: item.value || '',
-          display_title: item.display_title || item.key.replace(/_/g, ' '),
-          sort_order: item.sort_order || 0,
-        }))
-        setQuestions(mapped)
-        setSavedQuestions(JSON.parse(JSON.stringify(mapped))) // Deep copy for comparison
+        // Load steps
+        const stepsRes = await fetch('/api/wizard-steps')
+        if (stepsRes.ok) {
+          const { data: stepsData } = await stepsRes.json()
+          setSteps(stepsData)
+        }
+
+        // Load questions
+        const questionsRes = await fetch('/api/knowledge')
+        if (questionsRes.ok) {
+          const { data: questionsData } = await questionsRes.json()
+          const mapped = questionsData.map((item: any) => ({
+            id: item.id,
+            category: item.category,
+            key: item.key,
+            value: item.value || '',
+            display_title: item.display_title || item.key.replace(/_/g, ' '),
+            sort_order: item.sort_order || 0,
+          }))
+          setQuestions(mapped)
+          setSavedQuestions(JSON.parse(JSON.stringify(mapped)))
+        }
       } catch (error) {
-        console.error('Error loading questions:', error)
+        console.error('Error loading data:', error)
       } finally {
         setLoading(false)
       }
     }
-    loadQuestions()
+    loadData()
   }, [])
 
-  // Save a question's value
+  // === STEP HANDLERS ===
+
+  const handleAddStep = async () => {
+    if (!newStepTitle.trim()) return
+
+    try {
+      const res = await fetch('/api/wizard-steps', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ title: newStepTitle.trim() }),
+      })
+
+      if (res.ok) {
+        const { data } = await res.json()
+        setSteps((prev) => [...prev, data])
+        setNewStepTitle('')
+      } else {
+        const { error } = await res.json()
+        alert(error || 'Failed to add step')
+      }
+    } catch (error) {
+      console.error('Error adding step:', error)
+    }
+  }
+
+  const handleEditStep = async (id: number, title: string) => {
+    try {
+      const res = await fetch('/api/wizard-steps', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id, title }),
+      })
+
+      if (res.ok) {
+        const { data } = await res.json()
+        setSteps((prev) => prev.map((s) => (s.id === id ? data : s)))
+      } else {
+        const { error } = await res.json()
+        alert(error || 'Failed to update step')
+      }
+    } catch (error) {
+      console.error('Error updating step:', error)
+    }
+  }
+
+  const handleDeleteStep = async (id: number) => {
+    const step = steps.find((s) => s.id === id)
+    if (!step) return
+
+    if (!confirm(`Delete step "${step.title}"?`)) return
+
+    try {
+      const res = await fetch(`/api/wizard-steps?id=${id}`, { method: 'DELETE' })
+
+      if (res.ok) {
+        setSteps((prev) => prev.filter((s) => s.id !== id))
+        // Adjust current step index if needed
+        if (currentStepIndex >= steps.length - 1) {
+          setCurrentStepIndex(Math.max(0, steps.length - 2))
+        }
+      } else {
+        const { error } = await res.json()
+        alert(error || 'Failed to delete step')
+      }
+    } catch (error) {
+      console.error('Error deleting step:', error)
+    }
+  }
+
+  const handleStepDragEnd = async (event: DragEndEvent) => {
+    const { active, over } = event
+    if (!over || active.id === over.id) return
+
+    const oldIndex = steps.findIndex((s) => s.id === active.id)
+    const newIndex = steps.findIndex((s) => s.id === over.id)
+
+    const reordered = arrayMove(steps, oldIndex, newIndex)
+    setSteps(reordered)
+
+    // Update current step index to follow the active step
+    if (currentStep && currentStep.id === active.id) {
+      setCurrentStepIndex(newIndex)
+    } else {
+      // Find where the current step ended up
+      const newCurrentIndex = reordered.findIndex((s) => s.id === currentStep?.id)
+      if (newCurrentIndex >= 0) {
+        setCurrentStepIndex(newCurrentIndex)
+      }
+    }
+
+    // Save new order to DB
+    for (let i = 0; i < reordered.length; i++) {
+      await fetch('/api/wizard-steps', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: reordered[i].id, sort_order: i }),
+      })
+    }
+  }
+
+  // === QUESTION HANDLERS ===
+
   const saveQuestion = async (question: Question) => {
     await fetch('/api/knowledge', {
       method: 'POST',
@@ -243,19 +475,16 @@ export default function WizardPage() {
     })
   }
 
-  // Handle value change
   const handleValueChange = (id: number, value: string) => {
     setQuestions((prev) =>
       prev.map((q) => (q.id === id ? { ...q, value } : q))
     )
   }
 
-  // Handle title edit
   const handleTitleEdit = async (id: number, title: string) => {
     setQuestions((prev) =>
       prev.map((q) => (q.id === id ? { ...q, display_title: title } : q))
     )
-    // Save to DB
     await fetch('/api/knowledge', {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
@@ -263,14 +492,12 @@ export default function WizardPage() {
     })
   }
 
-  // Handle delete
   const handleDelete = async (id: number) => {
     setQuestions((prev) => prev.filter((q) => q.id !== id))
     await fetch(`/api/knowledge?id=${id}`, { method: 'DELETE' })
   }
 
-  // Handle drag end
-  const handleDragEnd = async (event: DragEndEvent) => {
+  const handleQuestionDragEnd = async (event: DragEndEvent) => {
     const { active, over } = event
     if (!over || active.id === over.id) return
 
@@ -279,7 +506,6 @@ export default function WizardPage() {
 
     const reordered = arrayMove(currentQuestions, oldIndex, newIndex)
 
-    // Update sort_order for all reordered items
     const updatedQuestions = questions.map((q) => {
       const reorderedIndex = reordered.findIndex((r) => r.id === q.id)
       if (reorderedIndex !== -1) {
@@ -290,7 +516,6 @@ export default function WizardPage() {
 
     setQuestions(updatedQuestions)
 
-    // Save new order to DB
     for (let i = 0; i < reordered.length; i++) {
       await fetch('/api/knowledge', {
         method: 'PUT',
@@ -300,9 +525,8 @@ export default function WizardPage() {
     }
   }
 
-  // Add new question
   const handleAddQuestion = async () => {
-    if (!newQuestionTitle.trim()) return
+    if (!newQuestionTitle.trim() || !currentStep) return
 
     const key = newQuestionTitle
       .toLowerCase()
@@ -344,32 +568,43 @@ export default function WizardPage() {
     }
   }
 
-  // Save current step and navigate
+  // === NAVIGATION HANDLERS ===
+
   const handleNext = async () => {
-    if (currentStep < STEPS.length) {
+    if (currentStepIndex < steps.length - 1) {
       setSaving(true)
       for (const q of currentQuestions) {
         await saveQuestion(q)
       }
+      setSavedQuestions((prev) => {
+        const updated = [...prev]
+        for (const q of currentQuestions) {
+          const idx = updated.findIndex((s) => s.id === q.id)
+          if (idx >= 0) {
+            updated[idx] = { ...q }
+          } else {
+            updated.push({ ...q })
+          }
+        }
+        return updated
+      })
       setSaving(false)
-      setCurrentStep(currentStep + 1)
+      setCurrentStepIndex(currentStepIndex + 1)
     }
   }
 
   const handlePrevious = () => {
-    if (currentStep > 1) {
-      setCurrentStep(currentStep - 1)
+    if (currentStepIndex > 0) {
+      setCurrentStepIndex(currentStepIndex - 1)
     }
   }
 
-  // Save current step without navigating
   const handleSave = async () => {
     setSaving(true)
     try {
       for (const q of currentQuestions) {
         await saveQuestion(q)
       }
-      // Update savedQuestions to reflect current state
       setSavedQuestions((prev) => {
         const updated = [...prev]
         for (const q of currentQuestions) {
@@ -405,7 +640,7 @@ export default function WizardPage() {
     }
   }
 
-  const progress = (currentStep / STEPS.length) * 100
+  const progress = steps.length > 0 ? ((currentStepIndex + 1) / steps.length) * 100 : 0
 
   if (loading) {
     return (
@@ -418,131 +653,205 @@ export default function WizardPage() {
 
   return (
     <div>
-      {/* Header */}
+      {/* Header with Add Step */}
       <div className={styles.wizardHeader}>
-        <h1>Training Wizard</h1>
-        <p className={styles.wizardSubtitle}>Teach the AI evaluator about your business</p>
-      </div>
-
-      {/* Progress Steps */}
-      <div className={styles.wizardSteps}>
-        {STEPS.map((step) => {
-          const StepIcon = step.icon
-          return (
-            <div
-              key={step.id}
-              className={`${styles.wizardStepTab} ${
-                currentStep === step.id ? styles.wizardStepActive : ''
-              } ${currentStep > step.id ? styles.wizardStepComplete : ''}`}
-              onClick={() => setCurrentStep(step.id)}
-            >
-              <div className={styles.wizardStepNumber}>{step.id}</div>
-              <div className={styles.wizardStepInfo}>
-                <div className={styles.wizardStepTitle}>{step.title}</div>
-              </div>
-            </div>
-          )
-        })}
-      </div>
-
-      {/* Progress Bar */}
-      <div className={styles.wizardProgressBar}>
-        <div className={styles.wizardProgressFill} style={{ width: `${progress}%` }} />
-      </div>
-
-      {/* Form Content */}
-      <div className={styles.wizardFormContainer}>
-        <div className={styles.wizardFormCard}>
-          {/* Step Title + Save Button */}
-          <div className={formStyles.stepHeader}>
-            <div className={formStyles.stepTitleRow}>
-              <h2 className={styles.wizardFormTitle}>{STEPS[currentStep - 1].title}</h2>
-              <button
-                type="button"
-                onClick={handleSave}
-                className={hasUnsavedChanges ? btnStyles.primary : btnStyles.secondary}
-                disabled={saving}
-              >
-                <Icons.Save size={18} />
-                {saving ? 'Saving...' : 'Save'}
-              </button>
-            </div>
-            <div className={formStyles.addQuestionRow}>
-              <input
-                type="text"
-                value={newQuestionTitle}
-                onChange={(e) => setNewQuestionTitle(e.target.value)}
-                onKeyDown={(e) => e.key === 'Enter' && handleAddQuestion()}
-                placeholder="Add new question..."
-                className={formStyles.addQuestionInput}
-              />
-              <button
-                type="button"
-                onClick={handleAddQuestion}
-                className={newQuestionTitle.trim() ? btnStyles.primary : btnStyles.secondary}
-                disabled={!newQuestionTitle.trim()}
-              >
-                <Icons.Plus size={18} />
-                Add
-              </button>
-            </div>
-          </div>
-
-          {/* Questions List */}
-          <div className={styles.wizardFormContent} key={currentStep}>
-            {currentQuestions.length === 0 ? (
-              <div className={formStyles.emptyState}>
-                <Icons.FileQuestion size={48} style={{ opacity: 0.3 }} />
-                <p>No questions yet. Add one above!</p>
-              </div>
-            ) : (
-              <DndContext
-                sensors={sensors}
-                collisionDetection={closestCenter}
-                onDragEnd={handleDragEnd}
-              >
-                <SortableContext
-                  items={currentQuestions.map((q) => q.id)}
-                  strategy={verticalListSortingStrategy}
-                >
-                  {currentQuestions.map((question) => (
-                    <SortableQuestion
-                      key={question.id}
-                      question={question}
-                      onValueChange={handleValueChange}
-                      onTitleEdit={handleTitleEdit}
-                      onDelete={handleDelete}
-                    />
-                  ))}
-                </SortableContext>
-              </DndContext>
-            )}
-          </div>
-
-          {/* Navigation Buttons */}
-          <div className={styles.wizardFormActions}>
-            <button
-              onClick={handlePrevious}
-              className={btnStyles.secondary}
-              disabled={currentStep === 1}
-            >
-              <Icons.ChevronLeft size={18} />
-              Previous
-            </button>
-            {currentStep < STEPS.length ? (
-              <button onClick={handleNext} className={btnStyles.primary} disabled={saving}>
-                {saving ? 'Saving...' : 'Next'}
-                <Icons.ChevronRight size={18} />
-              </button>
-            ) : (
-              <button onClick={handleSubmit} className={btnStyles.primary} disabled={saving}>
-                <Icons.Check size={18} />
-                {saving ? 'Saving...' : 'Complete Training'}
-              </button>
-            )}
-          </div>
+        <div>
+          <h1>Training Wizard</h1>
+          <p className={styles.wizardSubtitle}>Teach the AI evaluator about your business</p>
+        </div>
+        <div className={formStyles.addStepRow}>
+          <span className={formStyles.addStepLabel}>Add Step</span>
+          <input
+            type="text"
+            value={newStepTitle}
+            onChange={(e) => setNewStepTitle(e.target.value)}
+            onKeyDown={(e) => e.key === 'Enter' && handleAddStep()}
+            placeholder="Step name..."
+            className={formStyles.addStepInput}
+          />
+          <button
+            type="button"
+            onClick={handleAddStep}
+            className={newStepTitle.trim() ? btnStyles.primary : btnStyles.secondary}
+            disabled={!newStepTitle.trim()}
+          >
+            <Icons.Plus size={18} />
+            Add
+          </button>
         </div>
       </div>
+
+      {/* Step Tabs with Drag & Drop */}
+      {steps.length > 0 ? (
+        <DndContext
+          sensors={sensors}
+          collisionDetection={closestCenter}
+          onDragEnd={handleStepDragEnd}
+        >
+          <SortableContext
+            items={steps.map((s) => s.id)}
+            strategy={horizontalListSortingStrategy}
+          >
+            <div className={styles.wizardSteps}>
+              {steps.map((step, index) => (
+                <SortableStepTab
+                  key={step.id}
+                  step={step}
+                  index={index}
+                  isActive={currentStepIndex === index}
+                  onClick={() => setCurrentStepIndex(index)}
+                  onEdit={handleEditStep}
+                  onDelete={handleDeleteStep}
+                />
+              ))}
+            </div>
+          </SortableContext>
+        </DndContext>
+      ) : (
+        <div className={formStyles.emptyState}>
+          <Icons.Layers size={48} style={{ opacity: 0.3 }} />
+          <p>No steps yet. Add one above to get started!</p>
+        </div>
+      )}
+
+      {/* Progress Bar */}
+      {steps.length > 0 && (
+        <div className={styles.wizardProgressBar}>
+          <div className={styles.wizardProgressFill} style={{ width: `${progress}%` }} />
+        </div>
+      )}
+
+      {/* Form Content */}
+      {currentStep && (
+        <div className={styles.wizardFormContainer}>
+          <div className={styles.wizardFormCard}>
+            {/* Step Title + Save Button */}
+            <div className={formStyles.stepHeader}>
+              <div className={formStyles.stepTitleRow}>
+                {isEditingStepTitle ? (
+                  <input
+                    type="text"
+                    value={editedStepTitle}
+                    onChange={(e) => setEditedStepTitle(e.target.value)}
+                    onBlur={() => {
+                      if (editedStepTitle.trim() && editedStepTitle !== currentStep.title) {
+                        handleEditStep(currentStep.id, editedStepTitle.trim())
+                      }
+                      setIsEditingStepTitle(false)
+                    }}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        if (editedStepTitle.trim() && editedStepTitle !== currentStep.title) {
+                          handleEditStep(currentStep.id, editedStepTitle.trim())
+                        }
+                        setIsEditingStepTitle(false)
+                      } else if (e.key === 'Escape') {
+                        setIsEditingStepTitle(false)
+                      }
+                    }}
+                    className={formStyles.formTitleInput}
+                    autoFocus
+                  />
+                ) : (
+                  <h2 
+                    className={styles.wizardFormTitle}
+                    onClick={() => {
+                      setEditedStepTitle(currentStep.title)
+                      setIsEditingStepTitle(true)
+                    }}
+                    style={{ cursor: 'pointer' }}
+                    title="Click to edit"
+                  >
+                    {currentStep.title}
+                  </h2>
+                )}
+                <button
+                  type="button"
+                  onClick={handleSave}
+                  className={hasUnsavedChanges ? btnStyles.primary : btnStyles.secondary}
+                  disabled={saving}
+                >
+                  <Icons.Save size={18} />
+                  {saving ? 'Saving...' : 'Save'}
+                </button>
+              </div>
+              <div className={formStyles.addQuestionRow}>
+                <input
+                  type="text"
+                  value={newQuestionTitle}
+                  onChange={(e) => setNewQuestionTitle(e.target.value)}
+                  onKeyDown={(e) => e.key === 'Enter' && handleAddQuestion()}
+                  placeholder="Add new question..."
+                  className={formStyles.addQuestionInput}
+                />
+                <button
+                  type="button"
+                  onClick={handleAddQuestion}
+                  className={newQuestionTitle.trim() ? btnStyles.primary : btnStyles.secondary}
+                  disabled={!newQuestionTitle.trim()}
+                >
+                  <Icons.Plus size={18} />
+                  Add
+                </button>
+              </div>
+            </div>
+
+            {/* Questions List */}
+            <div className={styles.wizardFormContent} key={currentStepIndex}>
+              {currentQuestions.length === 0 ? (
+                <div className={formStyles.emptyState}>
+                  <Icons.FileQuestion size={48} style={{ opacity: 0.3 }} />
+                  <p>No questions yet. Add one above!</p>
+                </div>
+              ) : (
+                <DndContext
+                  sensors={sensors}
+                  collisionDetection={closestCenter}
+                  onDragEnd={handleQuestionDragEnd}
+                >
+                  <SortableContext
+                    items={currentQuestions.map((q) => q.id)}
+                    strategy={verticalListSortingStrategy}
+                  >
+                    {currentQuestions.map((question) => (
+                      <SortableQuestion
+                        key={question.id}
+                        question={question}
+                        onValueChange={handleValueChange}
+                        onTitleEdit={handleTitleEdit}
+                        onDelete={handleDelete}
+                      />
+                    ))}
+                  </SortableContext>
+                </DndContext>
+              )}
+            </div>
+
+            {/* Navigation Buttons */}
+            <div className={styles.wizardFormActions}>
+              <button
+                onClick={handlePrevious}
+                className={btnStyles.secondary}
+                disabled={currentStepIndex === 0}
+              >
+                <Icons.ChevronLeft size={18} />
+                Previous
+              </button>
+              {currentStepIndex < steps.length - 1 ? (
+                <button onClick={handleNext} className={btnStyles.primary} disabled={saving}>
+                  {saving ? 'Saving...' : 'Next'}
+                  <Icons.ChevronRight size={18} />
+                </button>
+              ) : (
+                <button onClick={handleSubmit} className={btnStyles.primary} disabled={saving}>
+                  <Icons.Check size={18} />
+                  {saving ? 'Saving...' : 'Complete Training'}
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
