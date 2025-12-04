@@ -446,3 +446,39 @@
   position: relative;
   z-index: 1;
 }
+
+/* Progress bar for buttons */
+.progressBar {
+  position: absolute;
+  left: 0;
+  top: 0;
+  height: 100%;
+  background: linear-gradient(90deg, rgba(74, 144, 226, 0.4) 0%, rgba(90, 143, 212, 0.6) 100%);
+  transition: width 0.3s ease-out;
+  z-index: 0;
+}
+
+.generating {
+  background-color: #3a5a8a;
+}
+
+/* Ghost button - minimal styling */
+.ghost {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 6px 10px;
+  background: transparent;
+  color: var(--text-muted, #888);
+  border: 1px solid var(--border-color, rgba(255, 255, 255, 0.1));
+  border-radius: 4px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.ghost:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--text-primary, #fff);
+  border-color: rgba(255, 255, 255, 0.2);
+}

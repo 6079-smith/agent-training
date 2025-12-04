@@ -10,6 +10,7 @@ interface ApplySuggestionRequest {
   stepCategory: string
   questionTitle: string
   questionValue: string
+  promptVersionId?: number // Optional: also update this prompt
 }
 
 /**
@@ -19,7 +20,7 @@ interface ApplySuggestionRequest {
 export async function POST(request: NextRequest) {
   try {
     const body: ApplySuggestionRequest = await request.json()
-    const { type, stepTitle, stepCategory, questionTitle, questionValue } = body
+    const { type, stepTitle, stepCategory, questionTitle, questionValue, promptVersionId } = body
 
     if (!stepCategory || !questionTitle || !questionValue) {
       return NextResponse.json(
@@ -83,11 +84,47 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    // If a prompt version ID was provided, also append to that prompt's system_prompt
+    let promptUpdated = false
+    if (promptVersionId) {
+      try {
+        // Get the current prompt
+        const prompt = await queryOne<{ system_prompt: string }>(
+          'SELECT system_prompt FROM prompt_versions WHERE id = $1',
+          [promptVersionId]
+        )
+
+        if (prompt) {
+          // Build the improvement text to append
+          const improvementText = `\n\n## Improvement: ${questionTitle}\n${questionValue}`
+          
+          // Append to system prompt
+          const updatedPrompt = prompt.system_prompt + improvementText
+          
+          await queryOne(
+            'UPDATE prompt_versions SET system_prompt = $1, updated_at = NOW() WHERE id = $2',
+            [updatedPrompt, promptVersionId]
+          )
+          promptUpdated = true
+        }
+      } catch (e) {
+        console.error('Failed to update prompt:', e)
+        // Continue anyway - knowledge base was updated
+      }
+    }
+
+    const baseMessage = type === 'new_step' 
+      ? `Created new step "${stepTitle}" with entry "${questionTitle}"`
+      : `Added "${questionTitle}" to "${stepTitle}"`
+    
+    const message = promptUpdated 
+      ? `${baseMessage} and updated current prompt`
+      : baseMessage
+
     return NextResponse.json({
       data: result,
-      message: type === 'new_step' 
-        ? `Created new step "${stepTitle}" with entry "${questionTitle}"`
-        : `Added "${questionTitle}" to "${stepTitle}"`
+      message,
+      promptUpdated
     } as ApiResponse)
   } catch (error) {
     console.error('Error applying suggestion:', error)

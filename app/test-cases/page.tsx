@@ -30,10 +30,24 @@ export default function TestCasesPage() {
   })
   const [submitting, setSubmitting] = useState(false)
   const [newTag, setNewTag] = useState('')
+  const [allTags, setAllTags] = useState<string[]>([])
 
   useEffect(() => {
     fetchTestCases()
+    fetchAllTags()
   }, [selectedTag])
+
+  async function fetchAllTags() {
+    try {
+      const res = await fetch('/api/test-cases/tags')
+      const data = await res.json()
+      if (data.data) {
+        setAllTags(data.data)
+      }
+    } catch (err) {
+      console.error('Failed to fetch tags:', err)
+    }
+  }
 
   async function fetchTestCases() {
     try {
@@ -137,11 +151,6 @@ export default function TestCasesPage() {
       setError(err instanceof Error ? err.message : 'Failed to delete test case')
     }
   }
-
-  // Get all unique tags from test cases
-  const allTags = Array.from(
-    new Set(testCases.flatMap((tc) => tc.tags || []))
-  ).sort()
 
   if (loading) {
     return (
@@ -289,127 +298,167 @@ export default function TestCasesPage() {
           </>
         }
       >
-        <form id="testCaseForm" onSubmit={handleSubmit}>
-          <div className={formStyles.formGroup}>
-            <label className={formStyles.label}>
-              Name <span className={formStyles.required}>*</span>
-            </label>
-            <input
-              type="text"
-              className={formStyles.input}
-              value={formData.name}
-              onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-              placeholder="e.g., Refund Request #1"
-              required
-            />
-          </div>
-
-          <div className={formStyles.formGroup}>
-            <label className={formStyles.label}>
-              Email Thread <span className={formStyles.required}>*</span>
-            </label>
-            <textarea
-              className={formStyles.textarea}
-              value={formData.email_thread}
-              onChange={(e) => setFormData({ ...formData, email_thread: e.target.value })}
-              placeholder="Paste the full email thread here..."
-              rows={10}
-              required
-            />
-          </div>
-
-          <div className={formStyles.formRow}>
+        <form id="testCaseForm" onSubmit={handleSubmit} className={formStyles.wizardForm}>
+          {/* Basic Info Section */}
+          <div className={formStyles.formSection}>
+            <h3 className={formStyles.sectionLabel}>Basic Info</h3>
             <div className={formStyles.formGroup}>
-              <label className={formStyles.label}>Customer Name</label>
+              <label className={formStyles.label}>
+                Name <span className={formStyles.required}>*</span>
+              </label>
               <input
                 type="text"
                 className={formStyles.input}
-                value={formData.customer_name}
-                onChange={(e) => setFormData({ ...formData, customer_name: e.target.value })}
-                placeholder="John Doe"
-              />
-            </div>
-
-            <div className={formStyles.formGroup}>
-              <label className={formStyles.label}>Customer Email</label>
-              <input
-                type="email"
-                className={formStyles.input}
-                value={formData.customer_email}
-                onChange={(e) => setFormData({ ...formData, customer_email: e.target.value })}
-                placeholder="customer@example.com"
+                value={formData.name}
+                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                placeholder="e.g., Refund Request - Damaged Item"
+                required
               />
             </div>
           </div>
 
-          <div className={formStyles.formRow}>
+          {/* Email Content Section */}
+          <div className={formStyles.formSection}>
+            <h3 className={formStyles.sectionLabel}>Email Content</h3>
             <div className={formStyles.formGroup}>
-              <label className={formStyles.label}>Subject</label>
-              <input
-                type="text"
-                className={formStyles.input}
-                value={formData.subject}
-                onChange={(e) => setFormData({ ...formData, subject: e.target.value })}
-                placeholder="Order never received"
-              />
-            </div>
-
-            <div className={formStyles.formGroup}>
-              <label className={formStyles.label}>Order Number</label>
-              <input
-                type="text"
-                className={formStyles.input}
-                value={formData.order_number}
-                onChange={(e) => setFormData({ ...formData, order_number: e.target.value })}
-                placeholder="#12345"
+              <label className={formStyles.label}>
+                Email Thread <span className={formStyles.required}>*</span>
+              </label>
+              <textarea
+                className={formStyles.textarea}
+                value={formData.email_thread}
+                onChange={(e) => setFormData({ ...formData, email_thread: e.target.value })}
+                placeholder="Paste the full email conversation here..."
+                rows={8}
+                required
               />
             </div>
           </div>
 
-          <div className={formStyles.formGroup}>
-            <label className={formStyles.label}>Expected Behavior</label>
-            <textarea
-              className={formStyles.textarea}
-              value={formData.expected_behavior}
-              onChange={(e) => setFormData({ ...formData, expected_behavior: e.target.value })}
-              placeholder="Describe what the agent should do..."
-              rows={3}
-            />
-          </div>
-
-          <div className={formStyles.formGroup}>
-            <label className={formStyles.label}>Tags</label>
-            <div className={formStyles.inputGroup}>
-              <input
-                type="text"
-                className={formStyles.input}
-                value={newTag}
-                onChange={(e) => setNewTag(e.target.value)}
-                onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), addTag())}
-                placeholder="Add a tag..."
-              />
-              <button type="button" onClick={addTag} className={btnStyles.secondary}>
-                Add
-              </button>
-            </div>
-            {formData.tags.length > 0 && (
-              <div className={styles.tagList}>
-                {formData.tags.map((tag) => (
-                  <span key={tag} className={styles.tag}>
-                    {tag}
-                    <button
-                      type="button"
-                      onClick={() => removeTag(tag)}
-                      className={styles.tagRemove}
-                    >
-                      ×
-                    </button>
-                  </span>
-                ))}
+          {/* Customer Details Section */}
+          <div className={formStyles.formSection}>
+            <h3 className={formStyles.sectionLabel}>Customer Details</h3>
+            <div className={formStyles.formRow}>
+              <div className={formStyles.formGroup}>
+                <label className={formStyles.label}>Customer Name</label>
+                <input
+                  type="text"
+                  className={formStyles.input}
+                  value={formData.customer_name}
+                  onChange={(e) => setFormData({ ...formData, customer_name: e.target.value })}
+                  placeholder="John Doe"
+                />
               </div>
-            )}
+
+              <div className={formStyles.formGroup}>
+                <label className={formStyles.label}>Customer Email</label>
+                <input
+                  type="email"
+                  className={formStyles.input}
+                  value={formData.customer_email}
+                  onChange={(e) => setFormData({ ...formData, customer_email: e.target.value })}
+                  placeholder="customer@example.com"
+                />
+              </div>
+            </div>
+
+            <div className={formStyles.formRow}>
+              <div className={formStyles.formGroup}>
+                <label className={formStyles.label}>Subject</label>
+                <input
+                  type="text"
+                  className={formStyles.input}
+                  value={formData.subject}
+                  onChange={(e) => setFormData({ ...formData, subject: e.target.value })}
+                  placeholder="Order never received"
+                />
+              </div>
+
+              <div className={formStyles.formGroup}>
+                <label className={formStyles.label}>Order Number</label>
+                <input
+                  type="text"
+                  className={formStyles.input}
+                  value={formData.order_number}
+                  onChange={(e) => setFormData({ ...formData, order_number: e.target.value })}
+                  placeholder="#12345"
+                />
+              </div>
+            </div>
           </div>
 
+          {/* Testing Criteria Section */}
+          <div className={formStyles.formSection}>
+            <h3 className={formStyles.sectionLabel}>Testing Criteria</h3>
+            <div className={formStyles.formGroup}>
+              <label className={formStyles.label}>Expected Behavior</label>
+              <textarea
+                className={formStyles.textarea}
+                value={formData.expected_behavior}
+                onChange={(e) => setFormData({ ...formData, expected_behavior: e.target.value })}
+                placeholder="Describe what the agent should do in response to this email..."
+                rows={3}
+              />
+            </div>
+
+            <div className={formStyles.formGroup}>
+              <label className={formStyles.label}>Tags</label>
+              <div className={formStyles.inputGroup}>
+                <select
+                  className={formStyles.select}
+                  value={newTag}
+                  onChange={(e) => {
+                    const value = e.target.value
+                    if (value && value !== '__new__') {
+                      if (!formData.tags.includes(value)) {
+                        setFormData({ ...formData, tags: [...formData.tags, value] })
+                      }
+                      setNewTag('')
+                    } else if (value === '__new__') {
+                      setNewTag('')
+                      // Focus will move to input
+                    }
+                  }}
+                >
+                  <option value="">Select existing tag...</option>
+                  {allTags
+                    .filter(tag => !formData.tags.includes(tag))
+                    .map((tag) => (
+                      <option key={tag} value={tag}>{tag}</option>
+                    ))}
+                  <option value="__new__">+ Add new tag...</option>
+                </select>
+                <input
+                  type="text"
+                  className={formStyles.input}
+                  value={newTag}
+                  onChange={(e) => setNewTag(e.target.value)}
+                  onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), addTag())}
+                  placeholder="New tag name"
+                  style={{ flex: 1 }}
+                />
+                <button type="button" onClick={addTag} className={btnStyles.secondary}>
+                  Add
+                </button>
+              </div>
+              {formData.tags.length > 0 && (
+                <div className={styles.tagList}>
+                  {formData.tags.map((tag) => (
+                    <span key={tag} className={styles.tag}>
+                      {tag}
+                      <button
+                        type="button"
+                        onClick={() => removeTag(tag)}
+                        className={styles.tagRemove}
+                      >
+                        ×
+                      </button>
+                    </span>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
         </form>
       </Modal>
     </div>

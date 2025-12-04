@@ -26,7 +26,8 @@ export async function POST(request: NextRequest) {
     const evaluation = await evaluateAgentResponse(
       body.emailThread,
       body.agentResponse,
-      body.knowledgeBase
+      body.knowledgeBase,
+      body.expectedBehavior
     )
 
     return NextResponse.json({ data: evaluation } as ApiResponse<EvaluateResponse>)

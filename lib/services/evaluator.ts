@@ -8,7 +8,8 @@ import type { EvaluateResponse, RuleCheckResult } from '@/types/api'
  */
 function buildEvaluationPrompt(
   knowledgeBase: KnowledgeBase[],
-  rules: EvaluatorRule[]
+  rules: EvaluatorRule[],
+  expectedBehavior?: string
 ): string {
   let prompt = `You are an AI evaluator for customer service agent responses. Your job is to analyze agent responses and score them based on quality, accuracy, and adherence to business rules.
 
@@ -42,13 +43,23 @@ Priority: ${rule.priority}
 `
   }
 
+  // Add expected behavior as a special rule if provided
+  if (expectedBehavior) {
+    prompt += `### Expected Behavior Check
+This test case has a specific expected behavior defined. The agent response should align with this expectation.
+Check: Does the response fulfill the expected behavior: "${expectedBehavior}"?
+Priority: high
+
+`
+  }
+
   prompt += `## Your Task
 
 1. Analyze the email thread and agent response
-2. Check each rule and determine if it passed or failed
-3. Provide reasoning for each rule check
-4. Calculate an overall score from 0-100 based on:
-   - Rule compliance (weighted by priority)
+2. Check each rule and determine if it passed or failed${expectedBehavior ? '\n3. Check if the response meets the Expected Behavior' : ''}
+${expectedBehavior ? '4' : '3'}. Provide reasoning for each rule check
+${expectedBehavior ? '5' : '4'}. Calculate an overall score from 0-100 based on:
+   - Rule compliance (weighted by priority)${expectedBehavior ? '\n   - Meeting the expected behavior' : ''}
    - Response quality
    - Professionalism
    - Accuracy
@@ -84,7 +95,8 @@ Be strict but fair in your evaluation. Focus on what matters for customer satisf
 export async function evaluateAgentResponse(
   emailThread: string,
   agentResponse: string,
-  knowledgeBase?: KnowledgeBase[]
+  knowledgeBase?: KnowledgeBase[],
+  expectedBehavior?: string
 ): Promise<EvaluateResponse> {
   try {
     // Fetch active evaluation rules
@@ -105,14 +117,23 @@ export async function evaluateAgentResponse(
     }
 
     // Build evaluation prompt
-    const evaluationPrompt = buildEvaluationPrompt(kb, rules)
+    const evaluationPrompt = buildEvaluationPrompt(kb, rules, expectedBehavior)
 
     // Build context for evaluation
-    const context = `## Email Thread
+    let context = `## Email Thread
 ${emailThread}
 
 ## Agent Response
-${agentResponse}
+${agentResponse}`
+
+    if (expectedBehavior) {
+      context += `
+
+## Expected Behavior
+The test case specifies that the agent should: ${expectedBehavior}`
+    }
+
+    context += `
 
 Please evaluate this agent response according to the rules and provide your assessment in JSON format.`
 

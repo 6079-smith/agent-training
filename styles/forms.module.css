@@ -92,6 +92,48 @@
   border-radius: 2px;
 }
 
+/* Wizard-style form layout */
+.wizardForm {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+/* Form section with visual grouping */
+.formSection {
+  padding: 20px 0;
+  border-bottom: 1px solid var(--border-color, rgba(255, 255, 255, 0.1));
+}
+
+.formSection:first-child {
+  padding-top: 0;
+}
+
+.formSection:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+.formSection .sectionLabel {
+  margin-bottom: 16px;
+}
+
+.formSection .formGroup {
+  margin-bottom: 12px;
+}
+
+.formSection .formGroup:last-child {
+  margin-bottom: 0;
+}
+
+.formSection .formRow {
+  margin-bottom: 12px;
+}
+
+.formSection .formRow:last-child {
+  margin-bottom: 0;
+}
+
 /* Form group with section styling */
 .formGroupSection {
   display: flex;

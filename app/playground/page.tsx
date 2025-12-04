@@ -55,6 +55,7 @@ export default function PlaygroundPage() {
   const [loadingSuggestions, setLoadingSuggestions] = useState(false)
   const [applyingId, setApplyingId] = useState<string | null>(null)
   const [appliedIds, setAppliedIds] = useState<Set<string>>(new Set())
+  const [generateProgress, setGenerateProgress] = useState(0)
 
   // Save state to localStorage whenever it changes
   useEffect(() => {
@@ -145,7 +146,17 @@ export default function PlaygroundPage() {
 
     try {
       setGenerating(true)
+      setGenerateProgress(0)
       setError(null)
+
+      // Start progress animation
+      const progressInterval = setInterval(() => {
+        setGenerateProgress(prev => {
+          if (prev >= 90) return prev
+          return prev + Math.random() * 15
+        })
+      }, 500)
+
       const res = await fetch('/api/generator/run', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -156,6 +167,9 @@ export default function PlaygroundPage() {
         }),
       })
 
+      clearInterval(progressInterval)
+      setGenerateProgress(100)
+
       const data = await res.json()
       if (data.error) throw new Error(data.error)
       
@@ -165,6 +179,7 @@ export default function PlaygroundPage() {
       setError(err instanceof Error ? err.message : 'Failed to generate response')
     } finally {
       setGenerating(false)
+      setTimeout(() => setGenerateProgress(0), 300)
     }
   }
 
@@ -180,12 +195,17 @@ export default function PlaygroundPage() {
       setSuggestions(null) // Clear previous suggestions
       setAppliedIds(new Set()) // Clear applied state
       
+      // Get expected behavior from selected test case if available
+      const selectedTestCase = testCases.find(tc => tc.id === selectedTestCaseId)
+      const expectedBehavior = selectedTestCase?.expected_behavior
+
       const res = await fetch('/api/evaluator/evaluate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           emailThread,
           agentResponse: generatedResponse,
+          expectedBehavior,
         }),
       })
 
@@ -242,6 +262,7 @@ export default function PlaygroundPage() {
           stepCategory: suggestion.stepCategory || suggestion.stepTitle.toLowerCase().replace(/\s+/g, '_'),
           questionTitle: suggestion.questionTitle,
           questionValue: suggestion.questionValue,
+          promptVersionId: selectedPromptId, // Also update the current prompt
         }),
       })
 
@@ -250,6 +271,15 @@ export default function PlaygroundPage() {
       
       // Mark as applied
       setAppliedIds(prev => new Set([...prev, suggestion.id]))
+      
+      // If prompt was updated, refresh the prompts list
+      if (data.promptUpdated) {
+        const promptsRes = await fetch('/api/prompts')
+        const promptsData = await promptsRes.json()
+        if (promptsData.data) {
+          setPrompts(promptsData.data)
+        }
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to apply suggestion')
     } finally {
@@ -361,21 +391,35 @@ export default function PlaygroundPage() {
           <div className={styles.panelFooter}>
             <button
               onClick={handleGenerate}
-              className={btnStyles.primary}
+              className={`${btnStyles.primary} ${generating ? btnStyles.generating : ''}`}
               disabled={!selectedPromptId || !emailThread || generating}
-              style={{ width: 'auto', minWidth: '180px', maxWidth: 'fit-content' }}
+              style={{ 
+                width: 'auto', 
+                minWidth: '180px', 
+                maxWidth: 'fit-content',
+                position: 'relative',
+                overflow: 'hidden'
+              }}
             >
-              {generating ? (
-                <>
-                  <Icons.Loader2 size={18} className="animate-spin" />
-                  Generating...
-                </>
-              ) : (
-                <>
-                  <Icons.Sparkles size={18} />
-                  Generate Response
-                </>
+              {generating && (
+                <span 
+                  className={btnStyles.progressBar}
+                  style={{ width: `${generateProgress}%` }}
+                />
               )}
+              <span style={{ position: 'relative', zIndex: 1, display: 'flex', alignItems: 'center', gap: '8px' }}>
+                {generating ? (
+                  <>
+                    <Icons.Loader2 size={18} className="animate-spin" />
+                    Generating... {Math.round(generateProgress)}%
+                  </>
+                ) : (
+                  <>
+                    <Icons.Sparkles size={18} />
+                    Generate Response
+                  </>
+                )}
+              </span>
             </button>
           </div>
         </div>

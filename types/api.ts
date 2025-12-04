@@ -34,6 +34,7 @@ export interface EvaluateRequest {
   emailThread: string
   agentResponse: string
   knowledgeBase?: KnowledgeBase[]
+  expectedBehavior?: string
 }
 
 export interface EvaluateResponse {
