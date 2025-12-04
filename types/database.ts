@@ -3,6 +3,8 @@ export interface KnowledgeBase {
   category: string
   key: string
   value: string
+  display_title: string | null
+  sort_order: number
   created_at: Date
   updated_at: Date
 }

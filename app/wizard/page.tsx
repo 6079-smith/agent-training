@@ -5,190 +5,353 @@ import styles from '@/styles/components.module.css'
 import btnStyles from '@/styles/buttons.module.css'
 import formStyles from '@/styles/forms.module.css'
 import * as Icons from 'lucide-react'
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  DragEndEvent,
+} from '@dnd-kit/core'
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  useSortable,
+  verticalListSortingStrategy,
+} from '@dnd-kit/sortable'
+import { CSS } from '@dnd-kit/utilities'
 
-// Collapsible Section Component
-function CollapsibleSection({ 
-  title, 
-  children, 
-  defaultOpen = false 
-}: { 
-  title: string
-  children: ReactNode
-  defaultOpen?: boolean 
+// Types
+interface Question {
+  id: number
+  category: string
+  key: string
+  value: string
+  display_title: string
+  sort_order: number
+}
+
+// Step configuration
+const STEPS = [
+  { id: 1, title: 'Business Basics', category: 'business', icon: Icons.Building2 },
+  { id: 2, title: 'Policies', category: 'policies', icon: Icons.FileText },
+  { id: 3, title: 'Capabilities', category: 'capabilities', icon: Icons.Zap },
+  { id: 4, title: 'Tone & Sign-offs', category: 'tone', icon: Icons.MessageSquare },
+  { id: 5, title: 'Failure Patterns', category: 'failures', icon: Icons.AlertTriangle },
+]
+
+// Sortable Question Component
+function SortableQuestion({
+  question,
+  onValueChange,
+  onTitleEdit,
+  onDelete,
+}: {
+  question: Question
+  onValueChange: (id: number, value: string) => void
+  onTitleEdit: (id: number, title: string) => void
+  onDelete: (id: number) => void
 }) {
-  const [isOpen, setIsOpen] = useState(defaultOpen)
-  
+  const [isOpen, setIsOpen] = useState(false)
+  const [isEditingTitle, setIsEditingTitle] = useState(false)
+  const [editedTitle, setEditedTitle] = useState(question.display_title)
+
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: question.id })
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+  }
+
+  const handleTitleSave = () => {
+    if (editedTitle.trim()) {
+      onTitleEdit(question.id, editedTitle.trim())
+    }
+    setIsEditingTitle(false)
+  }
+
+  const handleTitleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      handleTitleSave()
+    } else if (e.key === 'Escape') {
+      setEditedTitle(question.display_title)
+      setIsEditingTitle(false)
+    }
+  }
+
   return (
-    <div className={formStyles.formGroupSection}>
-      <div 
-        className={formStyles.sectionHeader}
-        onClick={() => setIsOpen(!isOpen)}
-      >
-        <h3 className={formStyles.sectionLabel}>{title}</h3>
-        <Icons.ChevronDown 
-          size={20} 
-          className={`${formStyles.sectionToggle} ${!isOpen ? formStyles.collapsed : ''}`}
-        />
+    <div ref={setNodeRef} style={style} className={formStyles.formGroupSection}>
+      <div className={formStyles.sectionHeader}>
+        {/* Drag Handle */}
+        <div
+          {...attributes}
+          {...listeners}
+          className={formStyles.dragHandle}
+          title="Drag to reorder"
+        >
+          <Icons.GripVertical size={18} />
+        </div>
+
+        {/* Title (editable) */}
+        {isEditingTitle ? (
+          <input
+            type="text"
+            value={editedTitle}
+            onChange={(e) => setEditedTitle(e.target.value)}
+            onBlur={handleTitleSave}
+            onKeyDown={handleTitleKeyDown}
+            className={formStyles.titleInput}
+            autoFocus
+            onClick={(e) => e.stopPropagation()}
+          />
+        ) : (
+          <h3
+            className={formStyles.sectionLabel}
+            onClick={() => setIsOpen(!isOpen)}
+            style={{ cursor: 'pointer', flex: 1 }}
+          >
+            {question.display_title}
+          </h3>
+        )}
+
+        {/* Action Buttons */}
+        <div className={formStyles.questionActions}>
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation()
+              setIsEditingTitle(true)
+              setEditedTitle(question.display_title)
+            }}
+            className={formStyles.iconButton}
+            title="Edit title"
+          >
+            <Icons.Pencil size={16} />
+          </button>
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation()
+              if (confirm(`Delete "${question.display_title}"?`)) {
+                onDelete(question.id)
+              }
+            }}
+            className={`${formStyles.iconButton} ${formStyles.iconButtonDanger}`}
+            title="Delete question"
+          >
+            <Icons.Trash2 size={16} />
+          </button>
+          <Icons.ChevronDown
+            size={20}
+            className={`${formStyles.sectionToggle} ${!isOpen ? formStyles.collapsed : ''}`}
+            onClick={() => setIsOpen(!isOpen)}
+            style={{ cursor: 'pointer' }}
+          />
+        </div>
       </div>
       <div className={`${formStyles.sectionContent} ${!isOpen ? formStyles.collapsed : ''}`}>
-        {children}
+        <textarea
+          className={`${formStyles.textarea} ${formStyles.textareaLarge}`}
+          value={question.value}
+          onChange={(e) => onValueChange(question.id, e.target.value)}
+          rows={8}
+          placeholder="Enter your answer..."
+        />
       </div>
     </div>
   )
 }
 
-const STEPS = [
-  { id: 1, title: 'Business Basics', icon: Icons.Building2 },
-  { id: 2, title: 'Policies', icon: Icons.FileText },
-  { id: 3, title: 'Capabilities', icon: Icons.Zap },
-  { id: 4, title: 'Tone & Sign-offs', icon: Icons.MessageSquare },
-  { id: 5, title: 'Failure Patterns', icon: Icons.AlertTriangle },
-]
-
-// Map database keys to form fields
-const DB_TO_FORM_MAP: Record<string, string> = {
-  // Business
-  'business.company_name': 'companyName',
-  'business.products': 'products',
-  'business.ship_to_countries': 'countries',
-  'business.no_ship_countries': 'notShipTo',
-  // Policies
-  'policies.refund_policy': 'refundPolicy',
-  'policies.shipping_policy': 'shippingPolicy',
-  'policies.escalation_triggers': 'escalationTriggers',
-  // Capabilities
-  'capabilities.can_do': 'canDo',
-  'capabilities.cannot_do': 'cannotDo',
-  'capabilities.tools_available': 'toolsAvailable',
-  // Tone
-  'tone.disclose_ai': 'discloseAi',
-  'tone.phrases_include': 'phrasesInclude',
-  'tone.phrases_avoid': 'phrasesAvoid',
-  'tone.sign_off_happy_path': 'signOffHappyPath',
-  'tone.sign_off_de_escalation': 'signOffDeEscalation',
-  'tone.sign_off_anxiety_management': 'signOffAnxietyManagement',
-  'tone.sign_off_rules': 'signOffRules',
-  // Failures
-  'failures.common_mistakes': 'commonMistakes',
-  'failures.hallucination_examples': 'hallucinationExamples',
-  'failures.must_never_say': 'mustNeverSay',
-}
-
-// Reverse map for saving
-const FORM_TO_DB_MAP: Record<string, { category: string; key: string }> = {
-  // Business
-  companyName: { category: 'business', key: 'company_name' },
-  products: { category: 'business', key: 'products' },
-  countries: { category: 'business', key: 'ship_to_countries' },
-  notShipTo: { category: 'business', key: 'no_ship_countries' },
-  // Policies
-  refundPolicy: { category: 'policies', key: 'refund_policy' },
-  shippingPolicy: { category: 'policies', key: 'shipping_policy' },
-  escalationTriggers: { category: 'policies', key: 'escalation_triggers' },
-  // Capabilities
-  canDo: { category: 'capabilities', key: 'can_do' },
-  cannotDo: { category: 'capabilities', key: 'cannot_do' },
-  toolsAvailable: { category: 'capabilities', key: 'tools_available' },
-  // Tone
-  discloseAi: { category: 'tone', key: 'disclose_ai' },
-  phrasesInclude: { category: 'tone', key: 'phrases_include' },
-  phrasesAvoid: { category: 'tone', key: 'phrases_avoid' },
-  signOffHappyPath: { category: 'tone', key: 'sign_off_happy_path' },
-  signOffDeEscalation: { category: 'tone', key: 'sign_off_de_escalation' },
-  signOffAnxietyManagement: { category: 'tone', key: 'sign_off_anxiety_management' },
-  signOffRules: { category: 'tone', key: 'sign_off_rules' },
-  // Failures
-  commonMistakes: { category: 'failures', key: 'common_mistakes' },
-  hallucinationExamples: { category: 'failures', key: 'hallucination_examples' },
-  mustNeverSay: { category: 'failures', key: 'must_never_say' },
-}
-
 export default function WizardPage() {
   const [currentStep, setCurrentStep] = useState(1)
   const [loading, setLoading] = useState(true)
-  const [formData, setFormData] = useState({
-    // Step 1: Business Basics
-    companyName: '',
-    products: '',
-    countries: '',
-    notShipTo: '',
-    
-    // Step 2: Policies
-    refundPolicy: '',
-    shippingPolicy: '',
-    escalationTriggers: '',
-    
-    // Step 3: Capabilities
-    canDo: '',
-    cannotDo: '',
-    toolsAvailable: '',
-    
-    // Step 4: Tone & Sign-offs
-    discloseAi: '',
-    phrasesInclude: '',
-    phrasesAvoid: '',
-    signOffHappyPath: '',
-    signOffDeEscalation: '',
-    signOffAnxietyManagement: '',
-    signOffRules: '',
-    
-    // Step 5: Failure Patterns
-    commonMistakes: '',
-    hallucinationExamples: '',
-    mustNeverSay: '',
+  const [questions, setQuestions] = useState<Question[]>([])
+  const [savedQuestions, setSavedQuestions] = useState<Question[]>([]) // Track last saved state
+  const [newQuestionTitle, setNewQuestionTitle] = useState('')
+  const [saving, setSaving] = useState(false)
+
+  const sensors = useSensors(
+    useSensor(PointerSensor),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  )
+
+  // Get current step's category
+  const currentCategory = STEPS[currentStep - 1].category
+
+  // Filter questions for current step
+  const currentQuestions = questions
+    .filter((q) => q.category === currentCategory)
+    .sort((a, b) => a.sort_order - b.sort_order)
+
+  // Check if current step has unsaved changes
+  const hasUnsavedChanges = currentQuestions.some((q) => {
+    const saved = savedQuestions.find((s) => s.id === q.id)
+    if (!saved) return true // New question not yet saved
+    return q.value !== saved.value || q.display_title !== saved.display_title || q.sort_order !== saved.sort_order
   })
 
-  // Clean up country data by extracting just the country list
-  const cleanCountryData = (value: string): string => {
-    // Remove preamble text and extract just the country list
-    const codeBlockMatch = value.match(/```\n?([\s\S]*?)```/)
-    if (codeBlockMatch) {
-      return codeBlockMatch[1].trim()
-    }
-    // If no code block, try to find where the country list starts
-    const lines = value.split('\n')
-    const countryStartIndex = lines.findIndex(line => 
-      /^[A-Z][a-zA-Z\s&'À-ÿ]+$/.test(line.trim()) && line.trim().length > 2
-    )
-    if (countryStartIndex > 0) {
-      return lines.slice(countryStartIndex).join('\n').trim()
-    }
-    return value
-  }
-
-  // Load existing data from knowledge base
+  // Load all questions from DB
   useEffect(() => {
-    async function loadKnowledge() {
+    async function loadQuestions() {
       try {
         const res = await fetch('/api/knowledge')
-        if (!res.ok) throw new Error('Failed to fetch knowledge')
+        if (!res.ok) throw new Error('Failed to fetch')
         const { data } = await res.json()
-        
-        const newFormData = { ...formData }
-        for (const item of data) {
-          const dbKey = `${item.category}.${item.key}`
-          const formField = DB_TO_FORM_MAP[dbKey]
-          if (formField && formField in newFormData) {
-            let value = item.value
-            // Clean up country fields
-            if (formField === 'countries' || formField === 'notShipTo') {
-              value = cleanCountryData(value)
-            }
-            (newFormData as any)[formField] = value
-          }
-        }
-        setFormData(newFormData)
+        const mapped = data.map((item: any) => ({
+          id: item.id,
+          category: item.category,
+          key: item.key,
+          value: item.value || '',
+          display_title: item.display_title || item.key.replace(/_/g, ' '),
+          sort_order: item.sort_order || 0,
+        }))
+        setQuestions(mapped)
+        setSavedQuestions(JSON.parse(JSON.stringify(mapped))) // Deep copy for comparison
       } catch (error) {
-        console.error('Error loading knowledge:', error)
+        console.error('Error loading questions:', error)
       } finally {
         setLoading(false)
       }
     }
-    loadKnowledge()
+    loadQuestions()
   }, [])
 
-  const handleNext = () => {
+  // Save a question's value
+  const saveQuestion = async (question: Question) => {
+    await fetch('/api/knowledge', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        category: question.category,
+        key: question.key,
+        value: question.value,
+        display_title: question.display_title,
+        sort_order: question.sort_order,
+      }),
+    })
+  }
+
+  // Handle value change
+  const handleValueChange = (id: number, value: string) => {
+    setQuestions((prev) =>
+      prev.map((q) => (q.id === id ? { ...q, value } : q))
+    )
+  }
+
+  // Handle title edit
+  const handleTitleEdit = async (id: number, title: string) => {
+    setQuestions((prev) =>
+      prev.map((q) => (q.id === id ? { ...q, display_title: title } : q))
+    )
+    // Save to DB
+    await fetch('/api/knowledge', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id, display_title: title }),
+    })
+  }
+
+  // Handle delete
+  const handleDelete = async (id: number) => {
+    setQuestions((prev) => prev.filter((q) => q.id !== id))
+    await fetch(`/api/knowledge?id=${id}`, { method: 'DELETE' })
+  }
+
+  // Handle drag end
+  const handleDragEnd = async (event: DragEndEvent) => {
+    const { active, over } = event
+    if (!over || active.id === over.id) return
+
+    const oldIndex = currentQuestions.findIndex((q) => q.id === active.id)
+    const newIndex = currentQuestions.findIndex((q) => q.id === over.id)
+
+    const reordered = arrayMove(currentQuestions, oldIndex, newIndex)
+
+    // Update sort_order for all reordered items
+    const updatedQuestions = questions.map((q) => {
+      const reorderedIndex = reordered.findIndex((r) => r.id === q.id)
+      if (reorderedIndex !== -1) {
+        return { ...q, sort_order: reorderedIndex }
+      }
+      return q
+    })
+
+    setQuestions(updatedQuestions)
+
+    // Save new order to DB
+    for (let i = 0; i < reordered.length; i++) {
+      await fetch('/api/knowledge', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: reordered[i].id, sort_order: i }),
+      })
+    }
+  }
+
+  // Add new question
+  const handleAddQuestion = async () => {
+    if (!newQuestionTitle.trim()) return
+
+    const key = newQuestionTitle
+      .toLowerCase()
+      .replace(/[^a-z0-9\s]/g, '')
+      .replace(/\s+/g, '_')
+
+    const maxSortOrder = Math.max(0, ...currentQuestions.map((q) => q.sort_order))
+
+    try {
+      const res = await fetch('/api/knowledge', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          category: currentCategory,
+          key: key,
+          value: '',
+          display_title: newQuestionTitle.trim(),
+          sort_order: maxSortOrder + 1,
+        }),
+      })
+
+      if (res.ok) {
+        const { data } = await res.json()
+        setQuestions((prev) => [
+          ...prev,
+          {
+            id: data.id,
+            category: data.category,
+            key: data.key,
+            value: data.value || '',
+            display_title: data.display_title,
+            sort_order: data.sort_order,
+          },
+        ])
+        setNewQuestionTitle('')
+      }
+    } catch (error) {
+      console.error('Error adding question:', error)
+    }
+  }
+
+  // Save current step and navigate
+  const handleNext = async () => {
     if (currentStep < STEPS.length) {
+      setSaving(true)
+      for (const q of currentQuestions) {
+        await saveQuestion(q)
+      }
+      setSaving(false)
       setCurrentStep(currentStep + 1)
     }
   }
@@ -199,248 +362,50 @@ export default function WizardPage() {
     }
   }
 
-  const handleSubmit = async () => {
+  // Save current step without navigating
+  const handleSave = async () => {
+    setSaving(true)
     try {
-      // Save each form field to the knowledge base
-      for (const [field, value] of Object.entries(formData)) {
-        if (!value) continue // Skip empty fields
-        const dbMapping = FORM_TO_DB_MAP[field]
-        if (!dbMapping) continue
-        
-        await fetch('/api/knowledge', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            category: dbMapping.category,
-            key: dbMapping.key,
-            value: value,
-          }),
-        })
+      for (const q of currentQuestions) {
+        await saveQuestion(q)
+      }
+      // Update savedQuestions to reflect current state
+      setSavedQuestions((prev) => {
+        const updated = [...prev]
+        for (const q of currentQuestions) {
+          const idx = updated.findIndex((s) => s.id === q.id)
+          if (idx >= 0) {
+            updated[idx] = { ...q }
+          } else {
+            updated.push({ ...q })
+          }
+        }
+        return updated
+      })
+    } catch (error) {
+      console.error('Error saving:', error)
+      alert('Failed to save')
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  const handleSubmit = async () => {
+    setSaving(true)
+    try {
+      for (const q of currentQuestions) {
+        await saveQuestion(q)
       }
       alert('Training data saved successfully!')
     } catch (error) {
       console.error('Error saving:', error)
       alert('Failed to save training data')
+    } finally {
+      setSaving(false)
     }
-  }
-
-  const updateField = (field: string, value: string) => {
-    setFormData({ ...formData, [field]: value })
   }
 
   const progress = (currentStep / STEPS.length) * 100
-
-  const renderStepContent = () => {
-    switch (currentStep) {
-      case 1:
-        return (
-          <>
-            <CollapsibleSection title="Company Name">
-              <input
-                type="text"
-                className={formStyles.input}
-                value={formData.companyName}
-                onChange={(e) => updateField('companyName', e.target.value)}
-                placeholder="e.g., Acme Corp"
-              />
-            </CollapsibleSection>
-            <CollapsibleSection title="Products">
-              <textarea
-                className={`${formStyles.textarea} ${formStyles.textareaLarge}`}
-                value={formData.products}
-                onChange={(e) => updateField('products', e.target.value)}
-                rows={8}
-                placeholder="Describe your products (e.g., snuff, snus, pouches)..."
-              />
-            </CollapsibleSection>
-            <CollapsibleSection title="Countries You Ship To">
-              <textarea
-                className={`${formStyles.textarea} ${formStyles.textareaLarge}`}
-                value={formData.countries}
-                onChange={(e) => updateField('countries', e.target.value)}
-                rows={8}
-                placeholder="List countries..."
-              />
-            </CollapsibleSection>
-            <CollapsibleSection title="Countries You Do NOT Ship To">
-              <textarea
-                className={`${formStyles.textarea} ${formStyles.textareaLarge}`}
-                value={formData.notShipTo}
-                onChange={(e) => updateField('notShipTo', e.target.value)}
-                rows={8}
-                placeholder="List countries..."
-              />
-            </CollapsibleSection>
-          </>
-        )
-      case 2:
-        return (
-          <>
-            <CollapsibleSection title="Refund Policy">
-              <textarea
-                className={`${formStyles.textarea} ${formStyles.textareaLarge}`}
-                value={formData.refundPolicy}
-                onChange={(e) => updateField('refundPolicy', e.target.value)}
-                rows={10}
-                placeholder="Describe your refund policy..."
-              />
-            </CollapsibleSection>
-            <CollapsibleSection title="Shipping Policy">
-              <textarea
-                className={`${formStyles.textarea} ${formStyles.textareaLarge}`}
-                value={formData.shippingPolicy}
-                onChange={(e) => updateField('shippingPolicy', e.target.value)}
-                rows={10}
-                placeholder="Describe your shipping policy..."
-              />
-            </CollapsibleSection>
-            <CollapsibleSection title="Escalation Triggers">
-              <textarea
-                className={`${formStyles.textarea} ${formStyles.textareaLarge}`}
-                value={formData.escalationTriggers}
-                onChange={(e) => updateField('escalationTriggers', e.target.value)}
-                rows={10}
-                placeholder="When should issues be escalated to a human?"
-              />
-            </CollapsibleSection>
-          </>
-        )
-      case 3:
-        return (
-          <>
-            <CollapsibleSection title="What CAN Your Agents Do?">
-              <textarea
-                className={`${formStyles.textarea} ${formStyles.textareaLarge}`}
-                value={formData.canDo}
-                onChange={(e) => updateField('canDo', e.target.value)}
-                rows={10}
-                placeholder="List capabilities..."
-              />
-            </CollapsibleSection>
-            <CollapsibleSection title="What CANNOT Your Agents Do?">
-              <textarea
-                className={`${formStyles.textarea} ${formStyles.textareaLarge}`}
-                value={formData.cannotDo}
-                onChange={(e) => updateField('cannotDo', e.target.value)}
-                rows={10}
-                placeholder="List limitations..."
-              />
-            </CollapsibleSection>
-            <CollapsibleSection title="Tools Available">
-              <textarea
-                className={`${formStyles.textarea} ${formStyles.textareaLarge}`}
-                value={formData.toolsAvailable}
-                onChange={(e) => updateField('toolsAvailable', e.target.value)}
-                rows={10}
-                placeholder="What tools/integrations are available to agents?"
-              />
-            </CollapsibleSection>
-          </>
-        )
-      case 4:
-        return (
-          <>
-            <CollapsibleSection title="Disclose AI?">
-              <input
-                type="text"
-                className={formStyles.input}
-                value={formData.discloseAi}
-                onChange={(e) => updateField('discloseAi', e.target.value)}
-                placeholder="Yes/No - Should the agent disclose it's an AI?"
-              />
-            </CollapsibleSection>
-            <CollapsibleSection title="Phrases to Include">
-              <textarea
-                className={`${formStyles.textarea} ${formStyles.textareaLarge}`}
-                value={formData.phrasesInclude}
-                onChange={(e) => updateField('phrasesInclude', e.target.value)}
-                rows={10}
-                placeholder="Phrases agents should use..."
-              />
-            </CollapsibleSection>
-            <CollapsibleSection title="Phrases to Avoid">
-              <textarea
-                className={`${formStyles.textarea} ${formStyles.textareaLarge}`}
-                value={formData.phrasesAvoid}
-                onChange={(e) => updateField('phrasesAvoid', e.target.value)}
-                rows={10}
-                placeholder="Phrases agents should NOT use..."
-              />
-            </CollapsibleSection>
-            <CollapsibleSection title="Sign-off: Happy Path">
-              <textarea
-                className={`${formStyles.textarea} ${formStyles.textareaLarge}`}
-                value={formData.signOffHappyPath}
-                onChange={(e) => updateField('signOffHappyPath', e.target.value)}
-                rows={6}
-                placeholder="Sign-offs for positive interactions..."
-              />
-            </CollapsibleSection>
-            <CollapsibleSection title="Sign-off: De-escalation">
-              <textarea
-                className={`${formStyles.textarea} ${formStyles.textareaLarge}`}
-                value={formData.signOffDeEscalation}
-                onChange={(e) => updateField('signOffDeEscalation', e.target.value)}
-                rows={6}
-                placeholder="Sign-offs for complaint resolution..."
-              />
-            </CollapsibleSection>
-            <CollapsibleSection title="Sign-off: Anxiety Management">
-              <textarea
-                className={`${formStyles.textarea} ${formStyles.textareaLarge}`}
-                value={formData.signOffAnxietyManagement}
-                onChange={(e) => updateField('signOffAnxietyManagement', e.target.value)}
-                rows={6}
-                placeholder="Sign-offs for worried customers..."
-              />
-            </CollapsibleSection>
-            <CollapsibleSection title="Sign-off Rules">
-              <textarea
-                className={`${formStyles.textarea} ${formStyles.textareaLarge}`}
-                value={formData.signOffRules}
-                onChange={(e) => updateField('signOffRules', e.target.value)}
-                rows={8}
-                placeholder="General rules for sign-offs..."
-              />
-            </CollapsibleSection>
-          </>
-        )
-      case 5:
-        return (
-          <>
-            <CollapsibleSection title="Common Mistakes">
-              <textarea
-                className={`${formStyles.textarea} ${formStyles.textareaLarge}`}
-                value={formData.commonMistakes}
-                onChange={(e) => updateField('commonMistakes', e.target.value)}
-                rows={10}
-                placeholder="Common mistakes agents make..."
-              />
-            </CollapsibleSection>
-            <CollapsibleSection title="Hallucination Examples">
-              <textarea
-                className={`${formStyles.textarea} ${formStyles.textareaLarge}`}
-                value={formData.hallucinationExamples}
-                onChange={(e) => updateField('hallucinationExamples', e.target.value)}
-                rows={10}
-                placeholder="Examples of incorrect information agents have generated..."
-              />
-            </CollapsibleSection>
-            <CollapsibleSection title="Must Never Say">
-              <textarea
-                className={`${formStyles.textarea} ${formStyles.textareaLarge}`}
-                value={formData.mustNeverSay}
-                onChange={(e) => updateField('mustNeverSay', e.target.value)}
-                rows={10}
-                placeholder="Things agents must NEVER say..."
-              />
-            </CollapsibleSection>
-          </>
-        )
-      default:
-        return null
-    }
-  }
 
   if (loading) {
     return (
@@ -468,9 +433,7 @@ export default function WizardPage() {
               key={step.id}
               className={`${styles.wizardStepTab} ${
                 currentStep === step.id ? styles.wizardStepActive : ''
-              } ${
-                currentStep > step.id ? styles.wizardStepComplete : ''
-              }`}
+              } ${currentStep > step.id ? styles.wizardStepComplete : ''}`}
               onClick={() => setCurrentStep(step.id)}
             >
               <div className={styles.wizardStepNumber}>{step.id}</div>
@@ -490,9 +453,70 @@ export default function WizardPage() {
       {/* Form Content */}
       <div className={styles.wizardFormContainer}>
         <div className={styles.wizardFormCard}>
-          <h2 className={styles.wizardFormTitle}>{STEPS[currentStep - 1].title}</h2>
+          {/* Step Title + Save Button */}
+          <div className={formStyles.stepHeader}>
+            <div className={formStyles.stepTitleRow}>
+              <h2 className={styles.wizardFormTitle}>{STEPS[currentStep - 1].title}</h2>
+              <button
+                type="button"
+                onClick={handleSave}
+                className={hasUnsavedChanges ? btnStyles.primary : btnStyles.secondary}
+                disabled={saving}
+              >
+                <Icons.Save size={18} />
+                {saving ? 'Saving...' : 'Save'}
+              </button>
+            </div>
+            <div className={formStyles.addQuestionRow}>
+              <input
+                type="text"
+                value={newQuestionTitle}
+                onChange={(e) => setNewQuestionTitle(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && handleAddQuestion()}
+                placeholder="Add new question..."
+                className={formStyles.addQuestionInput}
+              />
+              <button
+                type="button"
+                onClick={handleAddQuestion}
+                className={newQuestionTitle.trim() ? btnStyles.primary : btnStyles.secondary}
+                disabled={!newQuestionTitle.trim()}
+              >
+                <Icons.Plus size={18} />
+                Add
+              </button>
+            </div>
+          </div>
+
+          {/* Questions List */}
           <div className={styles.wizardFormContent} key={currentStep}>
-            {renderStepContent()}
+            {currentQuestions.length === 0 ? (
+              <div className={formStyles.emptyState}>
+                <Icons.FileQuestion size={48} style={{ opacity: 0.3 }} />
+                <p>No questions yet. Add one above!</p>
+              </div>
+            ) : (
+              <DndContext
+                sensors={sensors}
+                collisionDetection={closestCenter}
+                onDragEnd={handleDragEnd}
+              >
+                <SortableContext
+                  items={currentQuestions.map((q) => q.id)}
+                  strategy={verticalListSortingStrategy}
+                >
+                  {currentQuestions.map((question) => (
+                    <SortableQuestion
+                      key={question.id}
+                      question={question}
+                      onValueChange={handleValueChange}
+                      onTitleEdit={handleTitleEdit}
+                      onDelete={handleDelete}
+                    />
+                  ))}
+                </SortableContext>
+              </DndContext>
+            )}
           </div>
 
           {/* Navigation Buttons */}
@@ -506,14 +530,14 @@ export default function WizardPage() {
               Previous
             </button>
             {currentStep < STEPS.length ? (
-              <button onClick={handleNext} className={btnStyles.primary}>
-                Next
+              <button onClick={handleNext} className={btnStyles.primary} disabled={saving}>
+                {saving ? 'Saving...' : 'Next'}
                 <Icons.ChevronRight size={18} />
               </button>
             ) : (
-              <button onClick={handleSubmit} className={btnStyles.primary}>
+              <button onClick={handleSubmit} className={btnStyles.primary} disabled={saving}>
                 <Icons.Check size={18} />
-                Complete Training
+                {saving ? 'Saving...' : 'Complete Training'}
               </button>
             )}
           </div>

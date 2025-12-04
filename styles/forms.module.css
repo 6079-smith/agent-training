@@ -161,6 +161,123 @@
   min-height: 200px;
 }
 
+/* Drag handle for sortable items */
+.dragHandle {
+  cursor: grab;
+  color: #666;
+  padding: 4px;
+  display: flex;
+  align-items: center;
+  margin-right: 8px;
+}
+
+.dragHandle:hover {
+  color: #3b82f6;
+}
+
+.dragHandle:active {
+  cursor: grabbing;
+}
+
+/* Question action buttons */
+.questionActions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.iconButton {
+  background: transparent;
+  border: none;
+  color: #666;
+  padding: 6px;
+  border-radius: 4px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+}
+
+.iconButton:hover {
+  background: rgba(59, 130, 246, 0.1);
+  color: #3b82f6;
+}
+
+.iconButtonDanger:hover {
+  background: rgba(239, 68, 68, 0.1);
+  color: #ef4444;
+}
+
+/* Title input for editing */
+.titleInput {
+  flex: 1;
+  font-size: 18px;
+  font-weight: 700;
+  color: #3b82f6;
+  background: rgba(59, 130, 246, 0.1);
+  border: 2px solid #3b82f6;
+  border-radius: 4px;
+  padding: 4px 8px;
+  outline: none;
+}
+
+/* Step header with add question */
+.stepHeader {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.stepTitleRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.addQuestionRow {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.addQuestionRow button {
+  padding: 8px 12px !important;
+  white-space: nowrap;
+  flex-shrink: 0;
+  width: 80px !important;
+  min-width: 80px !important;
+  max-width: 80px !important;
+}
+
+.addQuestionInput {
+  flex: 1;
+  padding: 10px 12px;
+  background: transparent;
+  border: 1px solid var(--card-border);
+  border-radius: 4px;
+  color: var(--text);
+  font-size: 14px;
+}
+
+.addQuestionInput:focus {
+  outline: none;
+  border-color: #3b82f6;
+}
+
+/* Empty state */
+.emptyState {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 48px 24px;
+  color: #666;
+  text-align: center;
+  gap: 12px;
+}
+
 /* =============================================================================
    INPUTS
    ============================================================================= */
