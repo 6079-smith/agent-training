@@ -1278,13 +1278,27 @@
    TRAINING WIZARD
    ============================================ */
 
+.wizardPage {
+  display: flex;
+  flex-direction: column;
+  height: calc(100vh - 64px); /* Account for main nav height */
+  overflow: hidden;
+}
+
+.wizardStickyHeader {
+  flex-shrink: 0;
+  background: var(--bg-primary);
+  padding-bottom: 8px;
+  z-index: 10;
+}
+
 .wizardHeader {
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
   flex-wrap: wrap;
   gap: 16px;
-  margin-bottom: 32px;
+  margin-bottom: 16px;
 }
 
 .wizardHeader h1 {
@@ -1338,6 +1352,11 @@
   background: rgba(16, 185, 129, 0.05);
 }
 
+.wizardStepIncomplete {
+  border-color: #f59e0b;
+  background: rgba(245, 158, 11, 0.05);
+}
+
 .wizardStepNumber {
   width: 24px;
   height: 24px;
@@ -1362,6 +1381,11 @@
   color: white;
 }
 
+.wizardStepIncomplete .wizardStepNumber {
+  background: #f59e0b;
+  color: white;
+}
+
 .wizardStepInfo {
   flex: 0 0 auto;
 }
@@ -1378,7 +1402,7 @@
   height: 4px;
   background: var(--border-color);
   border-radius: 2px;
-  margin-bottom: 32px;
+  margin-bottom: 16px;
   overflow: hidden;
 }
 
@@ -1388,8 +1412,14 @@
   transition: width 0.3s ease;
 }
 
-/* Form Container */
+/* Form Container - Scrollable */
 .wizardFormContainer {
+  flex: 1;
+  overflow-y: auto;
+  padding-bottom: 24px;
+}
+
+.wizardFormContainer > * {
   max-width: 800px;
   margin: 0 auto;
 }
@@ -1504,7 +1534,7 @@
 
 .promptListHeader h3 {
   margin: 0;
-  font-size: 16px;
+  font-size: 18px;
   font-weight: 600;
   color: var(--text-primary);
 }
@@ -1604,7 +1634,7 @@
 
 .promptFormHeader h2 {
   margin: 0;
-  font-size: 20px;
+  font-size: 24px;
   font-weight: 600;
   color: var(--text-primary);
 }
@@ -1618,16 +1648,16 @@
   flex: 1;
   overflow-y: auto;
   padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
 }
 
 .promptTextareaHeader {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 8px;
-  padding: 8px 12px;
-  background: rgba(0, 0, 0, 0.02);
-  border-radius: 4px;
+  margin-bottom: 6px;
 }
 
 .promptTextareaHeader span {

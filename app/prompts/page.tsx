@@ -22,6 +22,7 @@ export default function PromptsPage() {
   })
   const [submitting, setSubmitting] = useState(false)
   const [isCreating, setIsCreating] = useState(false)
+  const [generating, setGenerating] = useState(false)
 
   useEffect(() => {
     fetchPrompts()
@@ -46,6 +47,34 @@ export default function PromptsPage() {
     setIsCreating(true)
     setSelectedPrompt(null)
     setFormData({ name: '', system_prompt: '', user_prompt: '', notes: '' })
+  }
+
+  async function generateFromTraining() {
+    try {
+      setGenerating(true)
+      setError(null)
+      
+      const res = await fetch('/api/prompts/generate', { method: 'POST' })
+      const data = await res.json()
+      
+      if (data.error) {
+        throw new Error(data.error)
+      }
+      
+      // Pre-fill the form with generated content, but keep existing name if user already entered one
+      setIsCreating(true)
+      setSelectedPrompt(null)
+      setFormData(prev => ({
+        name: prev.name.trim() || data.data.name,
+        system_prompt: data.data.systemPrompt,
+        user_prompt: data.data.userPrompt,
+        notes: prev.notes.trim() || data.data.notes,
+      }))
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to generate prompt')
+    } finally {
+      setGenerating(false)
+    }
   }
 
   function selectPrompt(prompt: PromptVersion) {
@@ -135,9 +164,22 @@ export default function PromptsPage() {
           <p className={styles.promptEditorSubtitle}>Manage and version control your system prompts</p>
         </div>
         <div className={styles.promptEditorActions}>
-          <button onClick={startCreate} className={btnStyles.primary}>
-            <Icons.Plus size={18} />
-            Generate from Training
+          <button 
+            onClick={generateFromTraining} 
+            className={btnStyles.primary}
+            disabled={generating}
+          >
+            {generating ? (
+              <>
+                <Icons.Loader2 size={18} className="animate-spin" />
+                Generating...
+              </>
+            ) : (
+              <>
+                <Icons.Sparkles size={18} />
+                Generate from Training
+              </>
+            )}
           </button>
           <button onClick={startCreate} className={btnStyles.secondary}>
             <Icons.FileText size={18} />
@@ -225,7 +267,7 @@ export default function PromptsPage() {
 
                 <div className={styles.promptFormContent}>
                   <div className={formStyles.formGroup}>
-                    <label className={formStyles.label}>Version name...</label>
+                    <h3 className={formStyles.sectionLabel}>Version Name</h3>
                     <input
                       type="text"
                       className={formStyles.input}
@@ -236,7 +278,7 @@ export default function PromptsPage() {
                   </div>
 
                   <div className={formStyles.formGroup}>
-                    <label className={formStyles.label}>System Prompt</label>
+                    <h3 className={formStyles.sectionLabel}>System Prompt</h3>
                     <div className={styles.promptTextareaHeader}>
                       <span>Enter your system prompt here...</span>
                       <button
@@ -258,9 +300,9 @@ export default function PromptsPage() {
                   </div>
 
                   <div className={formStyles.formGroup}>
-                    <label className={formStyles.label}>User Prompt</label>
+                    <h3 className={formStyles.sectionLabel}>User Prompt</h3>
                     <div className={styles.promptTextareaHeader}>
-                      <span>Enter your user prompt here... Use placeholders like {'{'}file.thread{'}'}, {'{'}file.to{'}'}, etc.</span>
+                      <span>Use placeholders like {'{'}file.thread{'}'}, {'{'}file.to{'}'}, etc.</span>
                       <button
                         type="button"
                         onClick={() => navigator.clipboard.writeText(formData.user_prompt)}

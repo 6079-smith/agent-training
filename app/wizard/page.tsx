@@ -41,11 +41,15 @@ interface Step {
   sort_order: number
 }
 
+// Step status type
+type StepStatus = 'empty' | 'incomplete' | 'complete'
+
 // Sortable Step Tab Component
 function SortableStepTab({
   step,
   index,
   isActive,
+  status,
   onClick,
   onEdit,
   onDelete,
@@ -53,6 +57,7 @@ function SortableStepTab({
   step: Step
   index: number
   isActive: boolean
+  status: StepStatus
   onClick: () => void
   onEdit: (id: number, title: string) => void
   onDelete: (id: number) => void
@@ -92,11 +97,18 @@ function SortableStepTab({
     }
   }
 
+  // Determine status class
+  const statusClass = status === 'complete' 
+    ? styles.wizardStepComplete 
+    : status === 'incomplete' 
+      ? styles.wizardStepIncomplete 
+      : ''
+
   return (
     <div
       ref={setNodeRef}
       style={style}
-      className={`${styles.wizardStepTab} ${isActive ? styles.wizardStepActive : ''}`}
+      className={`${styles.wizardStepTab} ${isActive ? styles.wizardStepActive : ''} ${statusClass}`}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
     >
@@ -162,16 +174,19 @@ function SortableStepTab({
 // Sortable Question Component
 function SortableQuestion({
   question,
+  isExpanded,
+  onToggleExpand,
   onValueChange,
   onTitleEdit,
   onDelete,
 }: {
   question: Question
+  isExpanded: boolean
+  onToggleExpand: (id: number) => void
   onValueChange: (id: number, value: string) => void
   onTitleEdit: (id: number, title: string) => void
   onDelete: (id: number) => void
 }) {
-  const [isOpen, setIsOpen] = useState(false)
   const [isEditingTitle, setIsEditingTitle] = useState(false)
   const [editedTitle, setEditedTitle] = useState(question.display_title)
 
@@ -234,7 +249,7 @@ function SortableQuestion({
         ) : (
           <h3
             className={formStyles.sectionLabel}
-            onClick={() => setIsOpen(!isOpen)}
+            onClick={() => onToggleExpand(question.id)}
             style={{ cursor: 'pointer', flex: 1 }}
           >
             {question.display_title}
@@ -270,13 +285,13 @@ function SortableQuestion({
           </button>
           <Icons.ChevronDown
             size={20}
-            className={`${formStyles.sectionToggle} ${!isOpen ? formStyles.collapsed : ''}`}
-            onClick={() => setIsOpen(!isOpen)}
+            className={`${formStyles.sectionToggle} ${!isExpanded ? formStyles.collapsed : ''}`}
+            onClick={() => onToggleExpand(question.id)}
             style={{ cursor: 'pointer' }}
           />
         </div>
       </div>
-      <div className={`${formStyles.sectionContent} ${!isOpen ? formStyles.collapsed : ''}`}>
+      <div className={`${formStyles.sectionContent} ${!isExpanded ? formStyles.collapsed : ''}`}>
         <textarea
           className={`${formStyles.textarea} ${formStyles.textareaLarge}`}
           value={question.value}
@@ -300,6 +315,38 @@ export default function WizardPage() {
   const [saving, setSaving] = useState(false)
   const [isEditingStepTitle, setIsEditingStepTitle] = useState(false)
   const [editedStepTitle, setEditedStepTitle] = useState('')
+  const [expandedQuestions, setExpandedQuestions] = useState<Set<number>>(new Set())
+
+  // Toggle question expand/collapse
+  const handleToggleExpand = (id: number) => {
+    setExpandedQuestions(prev => {
+      const next = new Set(prev)
+      if (next.has(id)) {
+        next.delete(id)
+      } else {
+        next.add(id)
+      }
+      return next
+    })
+  }
+
+  // Expand/collapse all questions for current step
+  const handleExpandCollapseAll = () => {
+    const currentIds = currentQuestions.map(q => q.id)
+    const allExpanded = currentIds.every(id => expandedQuestions.has(id))
+    
+    setExpandedQuestions(prev => {
+      const next = new Set(prev)
+      if (allExpanded) {
+        // Collapse all current
+        currentIds.forEach(id => next.delete(id))
+      } else {
+        // Expand all current
+        currentIds.forEach(id => next.add(id))
+      }
+      return next
+    })
+  }
 
   const sensors = useSensors(
     useSensor(PointerSensor),
@@ -323,6 +370,14 @@ export default function WizardPage() {
     if (!saved) return true
     return q.value !== saved.value || q.display_title !== saved.display_title || q.sort_order !== saved.sort_order
   })
+
+  // Get step status: empty (no questions), incomplete (has unanswered), complete (all answered)
+  const getStepStatus = (stepCategory: string): StepStatus => {
+    const stepQuestions = questions.filter((q) => q.category === stepCategory)
+    if (stepQuestions.length === 0) return 'empty'
+    const hasUnanswered = stepQuestions.some((q) => !q.value || q.value.trim() === '')
+    return hasUnanswered ? 'incomplete' : 'complete'
+  }
 
   // Load steps and questions from DB
   useEffect(() => {
@@ -652,9 +707,11 @@ export default function WizardPage() {
   }
 
   return (
-    <div>
-      {/* Header with Add Step */}
-      <div className={styles.wizardHeader}>
+    <div className={styles.wizardPage}>
+      {/* Sticky Header Section */}
+      <div className={styles.wizardStickyHeader}>
+        {/* Header with Add Step */}
+        <div className={styles.wizardHeader}>
         <div>
           <h1>Training Wizard</h1>
           <p className={styles.wizardSubtitle}>Teach the AI evaluator about your business</p>
@@ -681,47 +738,49 @@ export default function WizardPage() {
         </div>
       </div>
 
-      {/* Step Tabs with Drag & Drop */}
-      {steps.length > 0 ? (
-        <DndContext
-          sensors={sensors}
-          collisionDetection={closestCenter}
-          onDragEnd={handleStepDragEnd}
-        >
-          <SortableContext
-            items={steps.map((s) => s.id)}
-            strategy={horizontalListSortingStrategy}
+        {/* Step Tabs with Drag & Drop */}
+        {steps.length > 0 ? (
+          <DndContext
+            sensors={sensors}
+            collisionDetection={closestCenter}
+            onDragEnd={handleStepDragEnd}
           >
-            <div className={styles.wizardSteps}>
-              {steps.map((step, index) => (
-                <SortableStepTab
-                  key={step.id}
-                  step={step}
-                  index={index}
-                  isActive={currentStepIndex === index}
-                  onClick={() => setCurrentStepIndex(index)}
-                  onEdit={handleEditStep}
-                  onDelete={handleDeleteStep}
-                />
-              ))}
-            </div>
-          </SortableContext>
-        </DndContext>
-      ) : (
-        <div className={formStyles.emptyState}>
-          <Icons.Layers size={48} style={{ opacity: 0.3 }} />
-          <p>No steps yet. Add one above to get started!</p>
-        </div>
-      )}
+            <SortableContext
+              items={steps.map((s) => s.id)}
+              strategy={horizontalListSortingStrategy}
+            >
+              <div className={styles.wizardSteps}>
+                {steps.map((step, index) => (
+                  <SortableStepTab
+                    key={step.id}
+                    step={step}
+                    index={index}
+                    isActive={currentStepIndex === index}
+                    status={getStepStatus(step.category)}
+                    onClick={() => setCurrentStepIndex(index)}
+                    onEdit={handleEditStep}
+                    onDelete={handleDeleteStep}
+                  />
+                ))}
+              </div>
+            </SortableContext>
+          </DndContext>
+        ) : (
+          <div className={formStyles.emptyState}>
+            <Icons.Layers size={48} style={{ opacity: 0.3 }} />
+            <p>No steps yet. Add one above to get started!</p>
+          </div>
+        )}
 
-      {/* Progress Bar */}
-      {steps.length > 0 && (
-        <div className={styles.wizardProgressBar}>
-          <div className={styles.wizardProgressFill} style={{ width: `${progress}%` }} />
-        </div>
-      )}
+        {/* Progress Bar */}
+        {steps.length > 0 && (
+          <div className={styles.wizardProgressBar}>
+            <div className={styles.wizardProgressFill} style={{ width: `${progress}%` }} />
+          </div>
+        )}
+      </div>
 
-      {/* Form Content */}
+      {/* Scrollable Form Content */}
       {currentStep && (
         <div className={styles.wizardFormContainer}>
           <div className={styles.wizardFormCard}>
@@ -764,6 +823,16 @@ export default function WizardPage() {
                   >
                     {currentStep.title}
                   </h2>
+                )}
+                {currentQuestions.length > 0 && (
+                  <button
+                    type="button"
+                    onClick={handleExpandCollapseAll}
+                    className={formStyles.expandCollapseBtn}
+                  >
+                    <Icons.ChevronsUpDown size={14} />
+                    {currentQuestions.every(q => expandedQuestions.has(q.id)) ? 'Collapse All' : 'Expand All'}
+                  </button>
                 )}
                 <button
                   type="button"
@@ -817,6 +886,8 @@ export default function WizardPage() {
                       <SortableQuestion
                         key={question.id}
                         question={question}
+                        isExpanded={expandedQuestions.has(question.id)}
+                        onToggleExpand={handleToggleExpand}
                         onValueChange={handleValueChange}
                         onTitleEdit={handleTitleEdit}
                         onDelete={handleDelete}
