@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { queryOne, queryMany } from '@/lib/db'
+import { generatePromptFromTraining } from '@/lib/services/promptGenerator'
 import type { ApiResponse } from '@/types/api'
 
 export const dynamic = 'force-dynamic'
@@ -84,33 +85,31 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // If a prompt version ID was provided, also append to that prompt's system_prompt
+    // Regenerate prompt from updated training data and update the selected version
     let promptUpdated = false
-    console.log('promptVersionId received:', promptVersionId)
+    
+    console.log('=== PROMPT UPDATE DEBUG ===')
+    console.log('promptVersionId:', promptVersionId, 'type:', typeof promptVersionId)
+    
     if (promptVersionId) {
       try {
-        // Get the current prompt
-        const prompt = await queryOne<{ system_prompt: string }>(
-          'SELECT system_prompt FROM prompt_versions WHERE id = $1',
-          [promptVersionId]
+        console.log('Regenerating prompt from updated training data...')
+        
+        // Generate new prompt from all training data (including the just-added entry)
+        const generatedPrompt = await generatePromptFromTraining()
+        
+        // Update the existing prompt version
+        await queryOne(
+          `UPDATE prompt_versions 
+           SET system_prompt = $1, user_prompt = $2, updated_at = NOW()
+           WHERE id = $3`,
+          [generatedPrompt.systemPrompt, generatedPrompt.userPrompt, promptVersionId]
         )
-        console.log('Found prompt:', prompt ? 'yes' : 'no')
-
-        if (prompt) {
-          // Build the improvement text to append
-          const improvementText = `\n\n## Improvement: ${questionTitle}\n${questionValue}`
-          
-          // Append to system prompt
-          const updatedPrompt = prompt.system_prompt + improvementText
-          
-          await queryOne(
-            'UPDATE prompt_versions SET system_prompt = $1 WHERE id = $2',
-            [updatedPrompt, promptVersionId]
-          )
-          promptUpdated = true
-        }
+        
+        promptUpdated = true
+        console.log('Updated prompt version:', promptVersionId)
       } catch (e) {
-        console.error('Failed to update prompt:', e)
+        console.error('Failed to regenerate prompt:', e)
         // Continue anyway - knowledge base was updated
       }
     }
@@ -120,7 +119,7 @@ export async function POST(request: NextRequest) {
       : `Added "${questionTitle}" to "${stepTitle}"`
     
     const message = promptUpdated 
-      ? `${baseMessage} and updated current prompt`
+      ? `${baseMessage}. Prompt updated!`
       : baseMessage
 
     return NextResponse.json({

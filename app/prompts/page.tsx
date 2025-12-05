@@ -281,7 +281,7 @@ export default function PromptsPage() {
                     {selectedPrompt && !selectedPrompt.is_active && (
                       <button
                         onClick={() => handleActivate(selectedPrompt.id)}
-                        className={btnStyles.secondary}
+                        className={`${btnStyles.secondary} ${btnStyles.success}`}
                       >
                         <Icons.CheckCircle size={16} />
                         Set Active

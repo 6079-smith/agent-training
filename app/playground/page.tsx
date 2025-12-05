@@ -42,6 +42,8 @@ interface PlaygroundState {
   emailThread: string
   generatedResponse: string
   evaluation: EvaluateResponse | null
+  suggestions: SuggestionsResponse | null
+  appliedIds: string[]
 }
 
 export default function PlaygroundPage() {
@@ -63,6 +65,8 @@ export default function PlaygroundPage() {
   const [appliedIds, setAppliedIds] = useState<Set<string>>(new Set())
   const [generateProgress, setGenerateProgress] = useState(0)
   const [evaluateProgress, setEvaluateProgress] = useState(0)
+  const [applyAllProgress, setApplyAllProgress] = useState(0)
+  const [applyingAll, setApplyingAll] = useState(false)
   
   // Manual suggestion state
   const [wizardSteps, setWizardSteps] = useState<WizardStep[]>([])
@@ -77,6 +81,9 @@ export default function PlaygroundPage() {
   // Track edits to auto-suggestions (step and question title overrides)
   const [suggestionEdits, setSuggestionEdits] = useState<Record<string, { stepCategory?: string; questionTitle?: string }>>({})
   const [editingQuestionId, setEditingQuestionId] = useState<string | null>(null)
+  
+  // Success message for feedback
+  const [successMessage, setSuccessMessage] = useState<string | null>(null)
 
   // Save state to localStorage whenever it changes
   useEffect(() => {
@@ -88,9 +95,11 @@ export default function PlaygroundPage() {
       emailThread,
       generatedResponse,
       evaluation,
+      suggestions,
+      appliedIds: Array.from(appliedIds),
     }
     localStorage.setItem(STORAGE_KEY, JSON.stringify(state))
-  }, [selectedPromptId, selectedTestCaseId, emailThread, generatedResponse, evaluation, stateRestored])
+  }, [selectedPromptId, selectedTestCaseId, emailThread, generatedResponse, evaluation, suggestions, appliedIds, stateRestored])
 
   useEffect(() => {
     fetchData()
@@ -127,6 +136,8 @@ export default function PlaygroundPage() {
           if (state.emailThread) setEmailThread(state.emailThread)
           if (state.generatedResponse) setGeneratedResponse(state.generatedResponse)
           if (state.evaluation) setEvaluation(state.evaluation)
+          if (state.suggestions) setSuggestions(state.suggestions)
+          if (state.appliedIds) setAppliedIds(new Set(state.appliedIds))
         } catch {
           // Invalid saved state, ignore
         }
@@ -320,15 +331,12 @@ export default function PlaygroundPage() {
       // Mark as applied
       setAppliedIds(prev => new Set([...prev, suggestion.id]))
       
-      // If prompt was updated, refresh the prompts list and notify user
+      // If prompt was updated, show success message
       if (data.promptUpdated) {
-        const promptsRes = await fetch('/api/prompts')
-        const promptsData = await promptsRes.json()
-        if (promptsData.data) {
-          setPrompts(promptsData.data)
-        }
-        // Don't clear the response - user may want to save the result first
-        alert('✅ Improvement applied to your prompt!\n\nYou can Save Result now, then Generate Response again to test the improvement.')
+        // Show success message with instruction
+        setSuccessMessage('✅ Training updated & prompt regenerated! Click "Generate Response" to test the improvement.')
+        // Clear success message after 8 seconds
+        setTimeout(() => setSuccessMessage(null), 8000)
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to apply suggestion')
@@ -343,6 +351,28 @@ export default function PlaygroundPage() {
       ...suggestions,
       suggestions: suggestions.suggestions.filter(s => s.id !== suggestionId)
     })
+  }
+
+  async function applyAllSuggestions() {
+    if (!suggestions) return
+    
+    const unapplied = suggestions.suggestions.filter(s => !appliedIds.has(s.id))
+    if (unapplied.length === 0) return
+    
+    setApplyingAll(true)
+    setApplyAllProgress(0)
+    
+    for (let i = 0; i < unapplied.length; i++) {
+      await applySuggestion(unapplied[i])
+      setApplyAllProgress(Math.round(((i + 1) / unapplied.length) * 100))
+    }
+    
+    setApplyingAll(false)
+    setApplyAllProgress(0)
+    
+    // Show final success message
+    setSuccessMessage(`✅ Applied ${unapplied.length} improvements & prompt regenerated! Click "Generate Response" to test.`)
+    setTimeout(() => setSuccessMessage(null), 8000)
   }
 
   // Fetch wizard steps for manual suggestion dropdown
@@ -523,6 +553,18 @@ export default function PlaygroundPage() {
       </div>
 
       {error && <ErrorAlert message={error} onDismiss={() => setError(null)} />}
+      
+      {successMessage && (
+        <div className={styles.successAlert}>
+          {successMessage}
+          <button 
+            className={styles.successAlertDismiss}
+            onClick={() => setSuccessMessage(null)}
+          >
+            ×
+          </button>
+        </div>
+      )}
 
       <div className={styles.playgroundControls}>
         <div className={styles.controlGroup}>
@@ -736,6 +778,26 @@ export default function PlaygroundPage() {
             <div className={styles.suggestionsTitleRow}>
               <Icons.Lightbulb size={20} className={styles.iconWarning} />
               <h3 className={formStyles.sectionLabel}>Improvement Suggestions</h3>
+              {suggestions && suggestions.suggestions.filter(s => !appliedIds.has(s.id)).length > 0 && (
+                applyingAll ? (
+                  <button
+                    disabled
+                    className={btnStyles.progressButtonSuccess}
+                    style={{ '--progress': `${applyAllProgress}%` } as React.CSSProperties}
+                  >
+                    <span>Applying... {applyAllProgress}%</span>
+                  </button>
+                ) : (
+                  <button
+                    onClick={applyAllSuggestions}
+                    disabled={applyingId !== null}
+                    className={btnStyles.btnSuccessSmall}
+                  >
+                    <Icons.CheckCheck size={14} />
+                    Apply All ({suggestions.suggestions.filter(s => !appliedIds.has(s.id)).length})
+                  </button>
+                )
+              )}
             </div>
             {suggestions && (
               <p className={styles.suggestionsSummary}>{suggestions.summary}</p>
@@ -756,7 +818,7 @@ export default function PlaygroundPage() {
                 return (
                   <div 
                     key={suggestion.id} 
-                    className={`${styles.suggestionCard} ${isApplied ? styles.suggestionApplied : ''}`}
+                    className={`${styles.suggestionCard} ${isApplying ? styles.suggestionApplying : ''} ${isApplied ? styles.suggestionApplied : ''}`}
                   >
                     <div className={styles.suggestionHeader}>
                       <div className={styles.suggestionMeta}>

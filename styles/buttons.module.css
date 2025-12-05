@@ -145,6 +145,28 @@
   cursor: not-allowed;
 }
 
+/* Secondary Success (Green Outline) */
+.secondary.success {
+  color: #10b981;
+  border-color: #10b981;
+}
+
+.secondary.success:hover:not(:disabled) {
+  background: rgba(16, 185, 129, 0.1);
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.2);
+}
+
+/* Secondary Danger (Red Outline) */
+.secondary.danger {
+  color: #ef4444;
+  border-color: #ef4444;
+}
+
+.secondary.danger:hover:not(:disabled) {
+  background: rgba(239, 68, 68, 0.1);
+  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.2);
+}
+
 /* Full Width Button (for forms) */
 .btnBlock {
   width: 100%;
@@ -440,6 +462,43 @@
   background: linear-gradient(90deg, #4471BA 0%, #5a8fd4 100%);
   transition: width 0.3s ease-out;
   z-index: 0;
+}
+
+/* Green Progress Button */
+.progressButtonSuccess {
+  position: relative;
+  display: inline-flex !important;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 6px 16px;
+  background-color: #1a3a2a;
+  color: #ffffff;
+  border: 1px solid #10b981;
+  border-radius: 4px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: not-allowed;
+  overflow: hidden;
+  min-width: 140px;
+  white-space: nowrap;
+}
+
+.progressButtonSuccess::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  height: 100%;
+  width: var(--progress, 0%);
+  background: linear-gradient(90deg, #10b981 0%, #34d399 100%);
+  transition: width 0.3s ease-out;
+  z-index: 0;
+}
+
+.progressButtonSuccess span {
+  position: relative;
+  z-index: 1;
 }
 
 .progressButton span {
