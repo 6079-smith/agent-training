@@ -8,7 +8,13 @@ import layoutStyles from '@/styles/layout.module.css'
 import btnStyles from '@/styles/buttons.module.css'
 import formStyles from '@/styles/forms.module.css'
 import * as Icons from 'lucide-react'
-import type { PromptVersion, TestCase } from '@/types/database'
+import type { PromptVersion, TestCase, KnowledgeBase } from '@/types/database'
+
+interface WizardStep {
+  id: number
+  title: string
+  category: string
+}
 import type { GenerateResponse, EvaluateResponse } from '@/types/api'
 
 const STORAGE_KEY = 'playground_state'
@@ -57,9 +63,20 @@ export default function PlaygroundPage() {
   const [appliedIds, setAppliedIds] = useState<Set<string>>(new Set())
   const [generateProgress, setGenerateProgress] = useState(0)
   const [evaluateProgress, setEvaluateProgress] = useState(0)
-  const [manualSuggestion, setManualSuggestion] = useState('')
-  const [manualStepTitle, setManualStepTitle] = useState('')
+  
+  // Manual suggestion state
+  const [wizardSteps, setWizardSteps] = useState<WizardStep[]>([])
+  const [stepQuestions, setStepQuestions] = useState<KnowledgeBase[]>([])
+  const [selectedStepCategory, setSelectedStepCategory] = useState('')
+  const [selectedQuestionKey, setSelectedQuestionKey] = useState('')
+  const [newQuestionTitle, setNewQuestionTitle] = useState('')
+  const [manualContent, setManualContent] = useState('')
+  const [appendMode, setAppendMode] = useState(true)
   const [applyingManual, setApplyingManual] = useState(false)
+  
+  // Track edits to auto-suggestions (step and question title overrides)
+  const [suggestionEdits, setSuggestionEdits] = useState<Record<string, { stepCategory?: string; questionTitle?: string }>>({})
+  const [editingQuestionId, setEditingQuestionId] = useState<string | null>(null)
 
   // Save state to localStorage whenever it changes
   useEffect(() => {
@@ -274,14 +291,22 @@ export default function PlaygroundPage() {
       setApplyingId(suggestion.id)
       console.log('Applying suggestion with promptVersionId:', selectedPromptId)
       
+      // Get any user edits for this suggestion
+      const edits = suggestionEdits[suggestion.id] || {}
+      const stepCategory = edits.stepCategory || suggestion.stepCategory || suggestion.stepTitle.toLowerCase().replace(/\s+/g, '_')
+      const stepTitle = edits.stepCategory 
+        ? wizardSteps.find(s => s.category === edits.stepCategory)?.title || suggestion.stepTitle
+        : suggestion.stepTitle
+      const questionTitle = edits.questionTitle || suggestion.questionTitle
+      
       const res = await fetch('/api/suggestions/apply', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           type: suggestion.type,
-          stepTitle: suggestion.stepTitle,
-          stepCategory: suggestion.stepCategory || suggestion.stepTitle.toLowerCase().replace(/\s+/g, '_'),
-          questionTitle: suggestion.questionTitle,
+          stepTitle,
+          stepCategory,
+          questionTitle,
           questionValue: suggestion.questionValue,
           promptVersionId: selectedPromptId, // Also update the current prompt
         }),
@@ -320,9 +345,77 @@ export default function PlaygroundPage() {
     })
   }
 
+  // Fetch wizard steps for manual suggestion dropdown
+  async function fetchWizardSteps() {
+    try {
+      const res = await fetch('/api/wizard/steps')
+      const data = await res.json()
+      if (data.data) {
+        setWizardSteps(data.data)
+      }
+    } catch (err) {
+      console.error('Failed to fetch wizard steps:', err)
+    }
+  }
+
+  // Fetch questions for selected step
+  async function fetchStepQuestions(category: string) {
+    try {
+      const res = await fetch(`/api/knowledge?category=${encodeURIComponent(category)}`)
+      const data = await res.json()
+      if (data.data) {
+        setStepQuestions(data.data)
+      }
+    } catch (err) {
+      console.error('Failed to fetch step questions:', err)
+    }
+  }
+
+  // Handle step selection change
+  function handleStepChange(category: string) {
+    setSelectedStepCategory(category)
+    setSelectedQuestionKey('')
+    setNewQuestionTitle('')
+    setManualContent('')
+    if (category) {
+      fetchStepQuestions(category)
+    } else {
+      setStepQuestions([])
+    }
+  }
+
+  // Handle question selection change
+  function handleQuestionChange(key: string) {
+    setSelectedQuestionKey(key)
+    if (key === '__new__') {
+      setNewQuestionTitle('')
+      setManualContent('')
+      setAppendMode(true)
+    } else if (key) {
+      const question = stepQuestions.find(q => q.key === key)
+      if (question) {
+        // Show existing content as reference
+        setManualContent('')
+        setAppendMode(true)
+      }
+    }
+  }
+
   async function applyManualSuggestion() {
-    if (!manualSuggestion.trim() || !manualStepTitle.trim()) {
-      setError('Please enter both a step title and suggestion content')
+    if (!selectedStepCategory) {
+      setError('Please select a step')
+      return
+    }
+    if (!selectedQuestionKey) {
+      setError('Please select a question or create a new one')
+      return
+    }
+    if (selectedQuestionKey === '__new__' && !newQuestionTitle.trim()) {
+      setError('Please enter a title for the new question')
+      return
+    }
+    if (!manualContent.trim()) {
+      setError('Please enter the improvement content')
       return
     }
 
@@ -330,18 +423,29 @@ export default function PlaygroundPage() {
       setApplyingManual(true)
       setError(null)
       
-      const stepCategory = manualStepTitle.toLowerCase().replace(/\s+/g, '_')
-      const questionTitle = `manual_improvement_${Date.now()}`
+      const selectedStep = wizardSteps.find(s => s.category === selectedStepCategory)
+      const questionKey = selectedQuestionKey === '__new__' 
+        ? newQuestionTitle.toLowerCase().replace(/\s+/g, '_')
+        : selectedQuestionKey
+      
+      // If appending to existing, get current value and append
+      let finalValue = manualContent
+      if (selectedQuestionKey !== '__new__' && appendMode) {
+        const existingQuestion = stepQuestions.find(q => q.key === selectedQuestionKey)
+        if (existingQuestion) {
+          finalValue = existingQuestion.value + '\n\n' + manualContent
+        }
+      }
       
       const res = await fetch('/api/suggestions/apply', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           type: 'add_to_existing',
-          stepTitle: manualStepTitle,
-          stepCategory,
-          questionTitle,
-          questionValue: manualSuggestion,
+          stepTitle: selectedStep?.title || selectedStepCategory,
+          stepCategory: selectedStepCategory,
+          questionTitle: questionKey,
+          questionValue: finalValue,
           promptVersionId: selectedPromptId,
         }),
       })
@@ -350,8 +454,12 @@ export default function PlaygroundPage() {
       if (data.error) throw new Error(data.error)
 
       // Clear the form
-      setManualSuggestion('')
-      setManualStepTitle('')
+      setSelectedQuestionKey('')
+      setNewQuestionTitle('')
+      setManualContent('')
+      
+      // Refresh questions for this step
+      fetchStepQuestions(selectedStepCategory)
 
       // Notify user
       if (data.promptUpdated) {
@@ -652,27 +760,18 @@ export default function PlaygroundPage() {
                   >
                     <div className={styles.suggestionHeader}>
                       <div className={styles.suggestionMeta}>
+                        <span className={styles.suggestionMetaLabel}>Severity:</span>
                         <span className={`${styles.suggestionPriority} ${styles[`priority${suggestion.priority.charAt(0).toUpperCase() + suggestion.priority.slice(1)}`]}`}>
                           {suggestion.priority}
                         </span>
-                        <span className={styles.suggestionType}>
-                          {suggestion.type === 'new_step' ? (
-                            <>
-                              <Icons.FolderPlus size={14} />
-                              New Step
-                            </>
-                          ) : (
-                            <>
-                              <Icons.Plus size={14} />
-                              Add to Existing
-                            </>
-                          )}
-                        </span>
                         {suggestion.ruleViolated && (
-                          <span className={styles.suggestionRule}>
-                            <Icons.AlertTriangle size={14} />
-                            {suggestion.ruleViolated}
-                          </span>
+                          <>
+                            <span className={styles.suggestionMetaLabel}>Rule Violated:</span>
+                            <span className={styles.suggestionRule}>
+                              <Icons.AlertTriangle size={14} />
+                              {suggestion.ruleViolated}
+                            </span>
+                          </>
                         )}
                       </div>
                       {!isApplied && (
@@ -713,11 +812,66 @@ export default function PlaygroundPage() {
                     
                     <div className={styles.suggestionContent}>
                       <div className={styles.suggestionTarget}>
-                        <strong>Step:</strong> {suggestion.stepTitle}
+                        <strong>Step:</strong>{' '}
+                        {isApplied ? (
+                          suggestionEdits[suggestion.id]?.stepCategory 
+                            ? wizardSteps.find(s => s.category === suggestionEdits[suggestion.id]?.stepCategory)?.title 
+                            : suggestion.stepTitle
+                        ) : (
+                          <select
+                            value={suggestionEdits[suggestion.id]?.stepCategory || suggestion.stepCategory || ''}
+                            onChange={(e) => {
+                              setSuggestionEdits(prev => ({
+                                ...prev,
+                                [suggestion.id]: { ...prev[suggestion.id], stepCategory: e.target.value }
+                              }))
+                            }}
+                            onFocus={() => wizardSteps.length === 0 && fetchWizardSteps()}
+                            className={styles.suggestionStepSelect}
+                          >
+                            <option value={suggestion.stepCategory || suggestion.stepTitle.toLowerCase().replace(/\s+/g, '_')}>
+                              {suggestion.stepTitle}
+                            </option>
+                            {wizardSteps
+                              .filter(s => s.category !== (suggestion.stepCategory || suggestion.stepTitle.toLowerCase().replace(/\s+/g, '_')))
+                              .map(step => (
+                                <option key={step.category} value={step.category}>
+                                  {step.title}
+                                </option>
+                              ))}
+                          </select>
+                        )}
                       </div>
                       <div className={styles.suggestionEntry}>
                         <div className={styles.suggestionEntryTitle}>
-                          <strong>{suggestion.questionTitle}</strong>
+                          {editingQuestionId === suggestion.id && !isApplied ? (
+                            <input
+                              type="text"
+                              value={suggestionEdits[suggestion.id]?.questionTitle ?? suggestion.questionTitle}
+                              onChange={(e) => {
+                                setSuggestionEdits(prev => ({
+                                  ...prev,
+                                  [suggestion.id]: { ...prev[suggestion.id], questionTitle: e.target.value }
+                                }))
+                              }}
+                              onBlur={() => setEditingQuestionId(null)}
+                              onKeyDown={(e) => {
+                                if (e.key === 'Enter' || e.key === 'Escape') {
+                                  setEditingQuestionId(null)
+                                }
+                              }}
+                              className={styles.suggestionQuestionInput}
+                              autoFocus
+                            />
+                          ) : (
+                            <strong 
+                              className={!isApplied ? styles.suggestionQuestionEditable : ''}
+                              onClick={() => !isApplied && setEditingQuestionId(suggestion.id)}
+                              title={!isApplied ? 'Click to edit' : ''}
+                            >
+                              {suggestionEdits[suggestion.id]?.questionTitle || suggestion.questionTitle}
+                            </strong>
+                          )}
                         </div>
                         <div className={styles.suggestionEntryValue}>
                           {suggestion.questionValue}
@@ -742,24 +896,109 @@ export default function PlaygroundPage() {
                 Add Manual Improvement
               </h4>
               <div className={styles.manualSuggestionForm}>
-                <input
-                  type="text"
-                  placeholder="Step/Category (e.g., 'Refund Handling')"
-                  value={manualStepTitle}
-                  onChange={(e) => setManualStepTitle(e.target.value)}
-                  className={styles.manualStepInput}
-                />
-                <textarea
-                  placeholder="Enter your improvement suggestion... (e.g., 'Never promise specific refund timelines. Instead say: Your refund will be processed according to our standard procedures.')"
-                  value={manualSuggestion}
-                  onChange={(e) => setManualSuggestion(e.target.value)}
-                  className={styles.manualSuggestionInput}
-                  rows={3}
-                />
+                {/* Step Dropdown */}
+                <div className={styles.manualFormRow}>
+                  <label className={styles.manualLabel}>Step:</label>
+                  <select
+                    value={selectedStepCategory}
+                    onChange={(e) => handleStepChange(e.target.value)}
+                    className={styles.manualSelect}
+                    onFocus={() => wizardSteps.length === 0 && fetchWizardSteps()}
+                  >
+                    <option value="">Select a step...</option>
+                    {wizardSteps.map(step => (
+                      <option key={step.category} value={step.category}>
+                        {step.title}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* Question Dropdown - always visible */}
+                <div className={styles.manualFormRow}>
+                  <label className={styles.manualLabel}>Question:</label>
+                  <select
+                    value={selectedQuestionKey}
+                    onChange={(e) => handleQuestionChange(e.target.value)}
+                    className={styles.manualSelect}
+                    disabled={!selectedStepCategory}
+                  >
+                    <option value="">{selectedStepCategory ? 'Select or create...' : 'Select a step first...'}</option>
+                    {selectedStepCategory && <option value="__new__">➕ Create new question</option>}
+                    {stepQuestions.map(q => (
+                      <option key={q.key} value={q.key}>
+                        {q.display_title || q.key}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* New Question Title - only when creating new */}
+                {selectedQuestionKey === '__new__' && (
+                  <div className={styles.manualFormRow}>
+                    <label className={styles.manualLabel}>New Question Title:</label>
+                    <input
+                      type="text"
+                      placeholder="e.g., 'refund_timeline_rules'"
+                      value={newQuestionTitle}
+                      onChange={(e) => setNewQuestionTitle(e.target.value)}
+                      className={styles.manualStepInput}
+                    />
+                  </div>
+                )}
+
+                {/* Show existing content preview - only when editing existing */}
+                {selectedQuestionKey && selectedQuestionKey !== '__new__' && (
+                  <div className={styles.existingContentPreview}>
+                    <label className={styles.manualLabel}>Current Content:</label>
+                    <div className={styles.existingContentBox}>
+                      {stepQuestions.find(q => q.key === selectedQuestionKey)?.value || 'No content'}
+                    </div>
+                  </div>
+                )}
+
+                {/* Mode Toggle - only when editing existing */}
+                {selectedQuestionKey && selectedQuestionKey !== '__new__' && (
+                  <div className={styles.modeToggle}>
+                    <label className={styles.radioLabel}>
+                      <input
+                        type="radio"
+                        checked={appendMode}
+                        onChange={() => setAppendMode(true)}
+                      />
+                      Append to existing content
+                    </label>
+                    <label className={styles.radioLabel}>
+                      <input
+                        type="radio"
+                        checked={!appendMode}
+                        onChange={() => setAppendMode(false)}
+                      />
+                      Replace existing content
+                    </label>
+                  </div>
+                )}
+
+                {/* Content Input - always visible */}
+                <div className={styles.manualFormRow}>
+                  <label className={styles.manualLabel}>
+                    {selectedQuestionKey === '__new__' ? 'Content:' : (selectedQuestionKey && !appendMode ? 'New Content:' : 'Improvement:')}
+                  </label>
+                  <textarea
+                    placeholder="Enter your improvement..."
+                    value={manualContent}
+                    onChange={(e) => setManualContent(e.target.value)}
+                    className={styles.manualSuggestionInput}
+                    rows={3}
+                    disabled={!selectedStepCategory}
+                  />
+                </div>
+
+                {/* Apply Button - always visible */}
                 <button
                   onClick={applyManualSuggestion}
                   className={btnStyles.success}
-                  disabled={applyingManual || !manualSuggestion.trim() || !manualStepTitle.trim()}
+                  disabled={applyingManual || !selectedStepCategory || !selectedQuestionKey || !manualContent.trim() || (selectedQuestionKey === '__new__' && !newQuestionTitle.trim())}
                 >
                   {applyingManual ? (
                     <>

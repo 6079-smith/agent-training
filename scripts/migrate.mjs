@@ -93,6 +93,19 @@ const migrations = [
   // Fix evaluator_score constraint to allow 0-100 range
   `ALTER TABLE test_results DROP CONSTRAINT IF EXISTS test_results_evaluator_score_check`,
   `ALTER TABLE test_results ADD CONSTRAINT test_results_evaluator_score_check CHECK (evaluator_score >= 0 AND evaluator_score <= 100)`,
+  // Clean up duplicate evaluator rules first (keep the one with lowest id)
+  `DELETE FROM evaluator_rules a USING evaluator_rules b WHERE a.id > b.id AND a.name = b.name`,
+  // Then add unique constraint on evaluator_rules name to prevent future duplicates
+  `CREATE UNIQUE INDEX IF NOT EXISTS idx_evaluator_rules_name ON evaluator_rules(name)`,
+  // Add wizard_question_id to link evaluator rules to their source in the knowledge base
+  `ALTER TABLE evaluator_rules ADD COLUMN IF NOT EXISTS knowledge_base_id INTEGER REFERENCES knowledge_base(id) ON DELETE SET NULL`,
+  `CREATE INDEX IF NOT EXISTS idx_evaluator_rules_kb ON evaluator_rules(knowledge_base_id)`,
+  // Fix misspelled category 'eskaltion_triggers' -> 'escalation_triggers'
+  `UPDATE knowledge_base SET category = 'escalation_triggers' WHERE category = 'eskaltion_triggers'`,
+  `DELETE FROM wizard_steps WHERE category = 'eskaltion_triggers'`,
+  // Add missing wizard steps for orphaned knowledge base categories
+  `INSERT INTO wizard_steps (title, category, sort_order) VALUES ('Escalation Triggers', 'escalation_triggers', 7) ON CONFLICT (category) DO NOTHING`,
+  `INSERT INTO wizard_steps (title, category, sort_order) VALUES ('Refund Handling', 'refund_handling', 8) ON CONFLICT (category) DO NOTHING`,
 ]
 
 async function runMigrations() {

@@ -35,18 +35,13 @@
 }
 
 .statusCard {
-  background: var(--card-bg);
-  border: 1px solid var(--border-color);
-  border-radius: 8px;
+  background: linear-gradient(135deg, rgba(74, 144, 226, 0.12) 0%, rgba(74, 144, 226, 0.04) 100%);
+  border: 1px solid rgba(74, 144, 226, 0.4);
+  border-radius: 12px;
   padding: 20px;
   display: flex;
   align-items: center;
   gap: 16px;
-  transition: all 0.2s ease;
-}
-
-.statusCard:hover {
-  border-color: #4a5568;
 }
 
 .statusCardError {
@@ -60,23 +55,26 @@
 .statusIcon {
   width: 48px;
   height: 48px;
-  border-radius: 8px;
-  background: rgba(74, 144, 226, 0.1);
+  border-radius: 50%;
+  background: linear-gradient(135deg, #4a90e2 0%, #357abd 100%);
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #4a90e2;
+  color: #fff;
   flex-shrink: 0;
+  box-shadow: 0 4px 12px rgba(74, 144, 226, 0.3);
 }
 
 .statusCardError .statusIcon {
-  background: rgba(217, 83, 79, 0.1);
-  color: var(--danger-color);
+  background: linear-gradient(135deg, #d9534f 0%, #c9302c 100%);
+  color: #fff;
+  box-shadow: 0 4px 12px rgba(217, 83, 79, 0.3);
 }
 
 .statusCardWarning .statusIcon {
-  background: rgba(245, 158, 11, 0.1);
-  color: var(--warning);
+  background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+  color: #fff;
+  box-shadow: 0 4px 12px rgba(245, 158, 11, 0.3);
 }
 
 .statusContent {
@@ -1580,8 +1578,18 @@
 /* Show step actions on hover - handled via inline styles in component */
 
 .wizardStepActive {
-  border-color: #4a90e2;
-  background: rgba(74, 144, 226, 0.05);
+  border-color: #4a90e2 !important;
+  background: rgba(74, 144, 226, 0.15) !important;
+  animation: pulseGlow 2s ease-in-out infinite;
+}
+
+@keyframes pulseGlow {
+  0%, 100% {
+    box-shadow: 0 0 0 2px rgba(74, 144, 226, 0.2);
+  }
+  50% {
+    box-shadow: 0 0 0 3px rgba(74, 144, 226, 0.4);
+  }
 }
 
 .wizardStepComplete {
@@ -3238,15 +3246,10 @@
   color: #3b82f6;
 }
 
-.suggestionType {
-  display: flex;
-  align-items: center;
-  gap: 4px;
+.suggestionMetaLabel {
   font-size: 12px;
   color: var(--text-muted);
-  padding: 3px 8px;
-  background: rgba(255, 255, 255, 0.05);
-  border-radius: 4px;
+  font-weight: 500;
 }
 
 .suggestionRule {
@@ -3289,10 +3292,33 @@
 .suggestionTarget {
   font-size: 13px;
   color: var(--text-muted);
+  display: flex;
+  align-items: center;
+  gap: 6px;
 }
 
 .suggestionTarget strong {
   color: var(--text-primary);
+}
+
+.suggestionStepSelect {
+  padding: 4px 8px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 4px;
+  color: #fff;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.suggestionStepSelect:focus {
+  outline: none;
+  border-color: #4471BA;
+}
+
+.suggestionStepSelect option {
+  background: #1a2332;
+  color: #fff;
 }
 
 .suggestionEntry {
@@ -3306,6 +3332,34 @@
   font-size: 14px;
   color: var(--text-primary);
   margin-bottom: 6px;
+}
+
+.suggestionQuestionInput {
+  padding: 4px 8px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 4px;
+  color: #fff;
+  font-size: 14px;
+  font-weight: 600;
+  width: 100%;
+  max-width: 400px;
+}
+
+.suggestionQuestionInput:focus {
+  outline: none;
+  border-color: #4471BA;
+}
+
+.suggestionQuestionEditable {
+  cursor: pointer;
+  padding: 2px 4px;
+  border-radius: 4px;
+  transition: background-color 0.15s ease;
+}
+
+.suggestionQuestionEditable:hover {
+  background: rgba(68, 113, 186, 0.2);
 }
 
 .suggestionEntryValue {
@@ -3362,7 +3416,39 @@
 .manualSuggestionForm {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 12px;
+}
+
+.manualFormRow {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.manualLabel {
+  font-size: 13px;
+  font-weight: 500;
+  color: #aaa;
+}
+
+.manualSelect {
+  padding: 10px 12px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 6px;
+  color: #fff;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.manualSelect:focus {
+  outline: none;
+  border-color: #4471BA;
+}
+
+.manualSelect option {
+  background: #1a2332;
+  color: #fff;
 }
 
 .manualStepInput {
@@ -3395,6 +3481,228 @@
   border-color: #4471BA;
 }
 
+.existingContentPreview {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.existingContentBox {
+  padding: 10px 12px;
+  background: rgba(68, 113, 186, 0.1);
+  border: 1px solid rgba(68, 113, 186, 0.3);
+  border-radius: 6px;
+  color: #8ab4f8;
+  font-size: 13px;
+  max-height: 100px;
+  overflow-y: auto;
+  white-space: pre-wrap;
+}
+
+.modeToggle {
+  display: flex;
+  gap: 16px;
+}
+
+.radioLabel {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  color: #aaa;
+  cursor: pointer;
+}
+
+.radioLabel input[type="radio"] {
+  accent-color: #4471BA;
+}
+
 .manualSuggestionForm button {
   align-self: flex-start;
+  margin-top: 4px;
+}
+
+/* Evaluator Rules Page */
+.sourceFilterBar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 16px 0;
+  border-bottom: 1px solid var(--border-color);
+  margin-bottom: 20px;
+}
+
+.sourceFilterPill {
+  padding: 6px 14px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--border-color);
+  border-radius: 20px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  text-transform: capitalize;
+}
+
+.sourceFilterPill:hover {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+.sourceFilterActive {
+  background: #4471BA;
+  border-color: #4471BA;
+  color: #fff;
+}
+
+.sourceFilterActive:hover {
+  background: #3a62a3;
+  border-color: #3a62a3;
+}
+
+.rulesList {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.ruleCard {
+  background: var(--card-bg);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  padding: 20px;
+}
+
+.ruleCard.ruleInactive {
+  opacity: 0.6;
+}
+
+.ruleCardTitle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 16px;
+  font-weight: 600;
+  color: #4471BA;
+  margin-bottom: 16px;
+}
+
+.ruleHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 12px;
+}
+
+.ruleMeta {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.ruleName {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin: 0;
+}
+
+.ruleDisabledBadge {
+  font-size: 11px;
+  padding: 2px 8px;
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--text-muted);
+  border-radius: 4px;
+  text-transform: uppercase;
+}
+
+.ruleActions {
+  display: flex;
+  gap: 4px;
+}
+
+.ruleDescription {
+  font-size: 14px;
+  color: var(--text-secondary);
+  margin: 0 0 12px 0;
+}
+
+.ruleSource {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--text-muted);
+  padding: 8px 12px;
+  background: rgba(68, 113, 186, 0.1);
+  border-radius: 4px;
+  border-left: 3px solid #4471BA;
+  margin-bottom: 10px;
+}
+
+.ruleSourceLink {
+  color: #4471BA;
+  text-transform: capitalize;
+  font-weight: 600;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.ruleSourceLink:hover {
+  text-decoration: underline;
+}
+
+.ruleCheckPrompt {
+  font-size: 13px;
+  color: var(--text-muted);
+  background: rgba(0, 0, 0, 0.15);
+  padding: 12px;
+  border-radius: 6px;
+  line-height: 1.5;
+}
+
+.ruleCheckPrompt strong {
+  color: var(--text-secondary);
+}
+
+.ruleForm {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.formGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.formGroup label {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-secondary);
+}
+
+.formActions {
+  display: flex;
+  gap: 10px;
+  margin-top: 8px;
+}
+
+.emptyState {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 60px 20px;
+  color: var(--text-muted);
+  text-align: center;
+  gap: 16px;
+}
+
+.emptyState p {
+  margin: 0;
+  font-size: 16px;
 }

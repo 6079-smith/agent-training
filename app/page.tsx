@@ -14,6 +14,7 @@ interface WizardStatus {
   totalQuestions: number
   answeredQuestions: number
   percentComplete: number
+  firstIncompleteStep: string | null
 }
 
 interface DashboardStats {
@@ -94,6 +95,7 @@ export default function Home() {
           totalQuestions: 0,
           answeredQuestions: 0,
           percentComplete: 0,
+          firstIncompleteStep: null,
         },
       })
       console.error(err)
@@ -161,10 +163,10 @@ export default function Home() {
 
             <div className={styles.statusCard}>
               <div className={styles.statusIcon}>
-                <Icons.TestTube2 size={24} />
+                <Icons.Mail size={24} />
               </div>
               <div className={styles.statusContent}>
-                <div className={styles.statusLabel}>Test Cases</div>
+                <div className={styles.statusLabel}>Customer Emails</div>
                 <div className={styles.statusValue}>{stats.totalTestCases}</div>
               </div>
             </div>
@@ -174,7 +176,13 @@ export default function Home() {
           <div className={styles.quickActionsSection}>
             <h2 className={styles.sectionTitle}>Quick Actions</h2>
             <div className={styles.quickActionsGrid}>
-              <Link href="/wizard" className={styles.quickActionCard}>
+              <Link 
+                href={stats.wizardStatus.firstIncompleteStep 
+                  ? `/wizard?step=${stats.wizardStatus.firstIncompleteStep}` 
+                  : '/wizard'
+                } 
+                className={styles.quickActionCard}
+              >
                 <div className={styles.quickActionIcon}>
                   <Icons.Wand2 size={24} />
                 </div>

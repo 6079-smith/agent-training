@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { useSearchParams } from 'next/navigation'
 import styles from '@/styles/components.module.css'
 import btnStyles from '@/styles/buttons.module.css'
 import formStyles from '@/styles/forms.module.css'
@@ -305,6 +306,7 @@ function SortableQuestion({
 }
 
 export default function WizardPage() {
+  const searchParams = useSearchParams()
   const [steps, setSteps] = useState<Step[]>([])
   const [currentStepIndex, setCurrentStepIndex] = useState(0)
   const [loading, setLoading] = useState(true)
@@ -413,6 +415,17 @@ export default function WizardPage() {
     }
     loadData()
   }, [])
+
+  // Handle ?step= query parameter to navigate to specific step
+  useEffect(() => {
+    const stepCategory = searchParams.get('step')
+    if (stepCategory && steps.length > 0) {
+      const stepIndex = steps.findIndex(s => s.category === stepCategory)
+      if (stepIndex !== -1) {
+        setCurrentStepIndex(stepIndex)
+      }
+    }
+  }, [searchParams, steps])
 
   // === STEP HANDLERS ===
 

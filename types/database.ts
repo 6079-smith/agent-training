@@ -50,6 +50,7 @@ export interface EvaluatorRule {
   check_prompt: string
   is_active: boolean
   priority: number
+  knowledge_base_id: number | null
   created_at: Date
 }
 

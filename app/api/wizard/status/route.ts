@@ -11,6 +11,7 @@ interface WizardStatus {
   totalQuestions: number
   answeredQuestions: number
   percentComplete: number
+  firstIncompleteStep: string | null
 }
 
 /**
@@ -38,6 +39,7 @@ export async function GET() {
           totalQuestions: 0,
           answeredQuestions: 0,
           percentComplete: 0,
+          firstIncompleteStep: null,
         }
       } as ApiResponse<WizardStatus>)
     }
@@ -50,6 +52,7 @@ export async function GET() {
     let totalQuestions = 0
     let answeredQuestions = 0
     let completedSteps = 0
+    let firstIncompleteStep: string | null = null
 
     for (const category of stepCategories) {
       const categoryEntries = entries.filter(e => e.category === category)
@@ -62,6 +65,9 @@ export async function GET() {
       // A step is complete if all its questions are answered (or has no questions yet)
       if (categoryTotal === 0 || categoryAnswered === categoryTotal) {
         completedSteps++
+      } else if (!firstIncompleteStep) {
+        // Track the first incomplete step (lowest numbered)
+        firstIncompleteStep = category
       }
     }
 
@@ -79,6 +85,7 @@ export async function GET() {
         totalQuestions,
         answeredQuestions,
         percentComplete,
+        firstIncompleteStep,
       }
     } as ApiResponse<WizardStatus>)
   } catch (error) {
