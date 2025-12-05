@@ -67,6 +67,7 @@ export default function PlaygroundPage() {
   const [evaluateProgress, setEvaluateProgress] = useState(0)
   const [applyAllProgress, setApplyAllProgress] = useState(0)
   const [applyingAll, setApplyingAll] = useState(false)
+  const [autoEvaluate, setAutoEvaluate] = useState(false)
   
   // Manual suggestion state
   const [wizardSteps, setWizardSteps] = useState<WizardStep[]>([])
@@ -209,6 +210,14 @@ export default function PlaygroundPage() {
       
       setGeneratedResponse(data.data.response)
       setEvaluation(null) // Clear previous evaluation
+      
+      // Auto-evaluate if checkbox is checked
+      if (autoEvaluate) {
+        // Small delay to let UI update, then trigger evaluation
+        setTimeout(() => {
+          handleEvaluateWithResponse(data.data.response)
+        }, 100)
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to generate response')
     } finally {
@@ -217,28 +226,21 @@ export default function PlaygroundPage() {
     }
   }
 
-  async function handleEvaluate() {
-    if (!generatedResponse || !emailThread) {
-      setError('Please generate a response first')
-      return
-    }
-
+  // Evaluate with a specific response (used for auto-evaluate)
+  async function handleEvaluateWithResponse(response: string) {
+    if (!response || !emailThread) return
+    
     try {
       setEvaluating(true)
       setEvaluateProgress(0)
       setError(null)
-      setSuggestions(null) // Clear previous suggestions
-      setAppliedIds(new Set()) // Clear applied state
+      setSuggestions(null)
+      setAppliedIds(new Set())
       
-      // Start progress animation
       const progressInterval = setInterval(() => {
-        setEvaluateProgress(prev => {
-          if (prev >= 90) return prev
-          return prev + Math.random() * 12
-        })
+        setEvaluateProgress(prev => prev >= 90 ? prev : prev + Math.random() * 12)
       }, 500)
 
-      // Get expected behavior from selected test case if available
       const selectedTestCase = testCases.find(tc => tc.id === selectedTestCaseId)
       const expectedBehavior = selectedTestCase?.expected_behavior
 
@@ -247,7 +249,7 @@ export default function PlaygroundPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           emailThread,
-          agentResponse: generatedResponse,
+          agentResponse: response,
           expectedBehavior,
         }),
       })
@@ -259,9 +261,7 @@ export default function PlaygroundPage() {
       if (data.error) throw new Error(data.error)
       
       setEvaluation(data.data)
-      
-      // Automatically fetch suggestions after evaluation
-      fetchSuggestions(data.data)
+      fetchSuggestions(data.data, response)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to evaluate response')
     } finally {
@@ -270,15 +270,25 @@ export default function PlaygroundPage() {
     }
   }
 
-  async function fetchSuggestions(evalData: EvaluateResponse) {
+  async function handleEvaluate() {
+    if (!generatedResponse || !emailThread) {
+      setError('Please generate a response first')
+      return
+    }
+    
+    await handleEvaluateWithResponse(generatedResponse)
+  }
+
+  async function fetchSuggestions(evalData: EvaluateResponse, response?: string) {
     try {
       setLoadingSuggestions(true)
+      const agentResponse = response || generatedResponse
       const res = await fetch('/api/suggestions', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           emailThread,
-          agentResponse: generatedResponse,
+          agentResponse,
           evaluation: evalData,
         }),
       })
@@ -297,10 +307,9 @@ export default function PlaygroundPage() {
     }
   }
 
-  async function applySuggestion(suggestion: Suggestion) {
+  async function applySuggestion(suggestion: Suggestion, skipRegenerate = false) {
     try {
       setApplyingId(suggestion.id)
-      console.log('Applying suggestion with promptVersionId:', selectedPromptId)
       
       // Get any user edits for this suggestion
       const edits = suggestionEdits[suggestion.id] || {}
@@ -319,23 +328,21 @@ export default function PlaygroundPage() {
           stepCategory,
           questionTitle,
           questionValue: suggestion.questionValue,
-          promptVersionId: selectedPromptId, // Also update the current prompt
+          promptVersionId: selectedPromptId,
+          skipRegenerate, // Skip regeneration during batch operations
         }),
       })
       
       const data = await res.json()
-      console.log('Apply response:', data)
       
       if (data.error) throw new Error(data.error)
       
       // Mark as applied
       setAppliedIds(prev => new Set([...prev, suggestion.id]))
       
-      // If prompt was updated, show success message
-      if (data.promptUpdated) {
-        // Show success message with instruction
+      // If prompt was updated (single apply, not batch), show success message
+      if (data.promptUpdated && !skipRegenerate) {
         setSuccessMessage('✅ Training updated & prompt regenerated! Click "Generate Response" to test the improvement.')
-        // Clear success message after 8 seconds
         setTimeout(() => setSuccessMessage(null), 8000)
       }
     } catch (err) {
@@ -354,7 +361,7 @@ export default function PlaygroundPage() {
   }
 
   async function applyAllSuggestions() {
-    if (!suggestions) return
+    if (!suggestions || !selectedPromptId) return
     
     const unapplied = suggestions.suggestions.filter(s => !appliedIds.has(s.id))
     if (unapplied.length === 0) return
@@ -362,9 +369,33 @@ export default function PlaygroundPage() {
     setApplyingAll(true)
     setApplyAllProgress(0)
     
+    // Apply all suggestions WITHOUT regenerating prompt (fast)
     for (let i = 0; i < unapplied.length; i++) {
-      await applySuggestion(unapplied[i])
-      setApplyAllProgress(Math.round(((i + 1) / unapplied.length) * 100))
+      await applySuggestion(unapplied[i], true) // skipRegenerate = true
+      // Progress: 0-80% for applying suggestions
+      setApplyAllProgress(Math.round(((i + 1) / unapplied.length) * 80))
+    }
+    
+    // Now regenerate prompt ONCE at the end (slow part)
+    setApplyAllProgress(85)
+    try {
+      const res = await fetch('/api/prompts/generate', { method: 'POST' })
+      const data = await res.json()
+      
+      if (data.data) {
+        // Update the selected prompt version with regenerated content
+        await fetch(`/api/prompts/${selectedPromptId}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            system_prompt: data.data.systemPrompt,
+            user_prompt: data.data.userPrompt,
+          }),
+        })
+      }
+      setApplyAllProgress(100)
+    } catch (e) {
+      console.error('Failed to regenerate prompt:', e)
     }
     
     setApplyingAll(false)
@@ -645,6 +676,29 @@ export default function PlaygroundPage() {
                 )}
               </span>
             </button>
+            
+            <label style={{ 
+              marginLeft: '16px', 
+              cursor: 'pointer', 
+              display: 'inline-flex', 
+              alignItems: 'center', 
+              gap: '8px',
+              color: 'rgba(255, 255, 255, 0.7)',
+              fontSize: '14px'
+            }}>
+              <input
+                type="checkbox"
+                checked={autoEvaluate}
+                onChange={(e) => setAutoEvaluate(e.target.checked)}
+                style={{ 
+                  width: '16px', 
+                  height: '16px', 
+                  accentColor: '#4a90e2',
+                  cursor: 'pointer'
+                }}
+              />
+              Auto Evaluate
+            </label>
           </div>
         </div>
 

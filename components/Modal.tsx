@@ -29,7 +29,7 @@ export default function Modal({ isOpen, onClose, title, children, footer, size =
   if (!isOpen) return null
 
   return (
-    <div className={styles.modalOverlay} onClick={onClose}>
+    <div className={styles.modalOverlay}>
       <div
         className={`${styles.modal} ${styles[`modal${size.charAt(0).toUpperCase() + size.slice(1)}`]}`}
         onClick={(e) => e.stopPropagation()}

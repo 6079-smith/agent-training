@@ -181,13 +181,13 @@ export default function Home() {
                   ? `/wizard?step=${stats.wizardStatus.firstIncompleteStep}` 
                   : '/wizard'
                 } 
-                className={styles.quickActionCard}
+                className={`${styles.quickActionCard} ${!stats.wizardStatus.isComplete ? styles.quickActionWarning : ''}`}
               >
                 <div className={styles.quickActionIcon}>
                   <Icons.Wand2 size={24} />
                 </div>
                 <div className={styles.quickActionContent}>
-                  <h3>Complete Training Wizard</h3>
+                  <h3>{stats.wizardStatus.isComplete ? 'Training Wizard' : 'Complete Training Wizard'}</h3>
                   <p>Set up your business context for the AI evaluator</p>
                 </div>
               </Link>
@@ -207,7 +207,7 @@ export default function Home() {
                   <Icons.Mail size={24} />
                 </div>
                 <div className={styles.quickActionContent}>
-                  <h3>Add Customer Emails</h3>
+                  <h3>Customer Emails</h3>
                   <p>Add sample emails to test your prompts against</p>
                 </div>
               </Link>

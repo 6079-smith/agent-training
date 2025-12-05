@@ -9,6 +9,8 @@ import formStyles from '@/styles/forms.module.css'
 import * as Icons from 'lucide-react'
 import type { PromptVersion } from '@/types/database'
 
+const STORAGE_KEY = 'prompt-editor-state'
+
 export default function PromptsPage() {
   const [prompts, setPrompts] = useState<PromptVersion[]>([])
   const [loading, setLoading] = useState(true)
@@ -25,6 +27,13 @@ export default function PromptsPage() {
   const [generating, setGenerating] = useState(false)
   const [generateProgress, setGenerateProgress] = useState(0)
 
+  // Persist selected prompt ID
+  useEffect(() => {
+    if (selectedPrompt) {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify({ selectedPromptId: selectedPrompt.id }))
+    }
+  }, [selectedPrompt])
+
   useEffect(() => {
     fetchPrompts()
   }, [])
@@ -36,7 +45,28 @@ export default function PromptsPage() {
       const res = await fetch('/api/prompts')
       const data = await res.json()
       if (data.error) throw new Error(data.error)
-      setPrompts(data.data || [])
+      const promptsList = data.data || []
+      setPrompts(promptsList)
+      
+      // Restore previously selected prompt
+      const savedState = localStorage.getItem(STORAGE_KEY)
+      if (savedState && promptsList.length > 0) {
+        try {
+          const { selectedPromptId } = JSON.parse(savedState)
+          const savedPrompt = promptsList.find((p: PromptVersion) => p.id === selectedPromptId)
+          if (savedPrompt) {
+            setSelectedPrompt(savedPrompt)
+            setFormData({
+              name: savedPrompt.name,
+              system_prompt: savedPrompt.system_prompt,
+              user_prompt: savedPrompt.user_prompt || '',
+              notes: savedPrompt.notes || '',
+            })
+          }
+        } catch {
+          // Invalid saved state, ignore
+        }
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load prompts')
     } finally {

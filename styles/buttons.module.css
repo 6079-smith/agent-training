@@ -131,9 +131,10 @@
   white-space: nowrap;
 }
 
+.secondary:hover:not(:disabled),
 .btnSecondary:hover:not(:disabled) {
-  background: rgba(70, 147, 209, 0.1);
-  box-shadow: 0 4px 12px rgba(70, 147, 209, 0.2);
+  background: linear-gradient(135deg, rgba(74, 144, 226, 0.15) 0%, rgba(74, 144, 226, 0.08) 100%);
+  box-shadow: 0 4px 12px rgba(74, 144, 226, 0.2);
 }
 
 .btnSecondary:active:not(:disabled) {

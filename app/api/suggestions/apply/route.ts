@@ -6,12 +6,13 @@ import type { ApiResponse } from '@/types/api'
 export const dynamic = 'force-dynamic'
 
 interface ApplySuggestionRequest {
-  type: 'add_to_existing' | 'new_step'
+  type: 'add_to_existing'
   stepTitle: string
   stepCategory: string
   questionTitle: string
   questionValue: string
   promptVersionId?: number // Optional: also update this prompt
+  skipRegenerate?: boolean // Skip prompt regeneration (for batch operations)
 }
 
 /**
@@ -21,36 +22,13 @@ interface ApplySuggestionRequest {
 export async function POST(request: NextRequest) {
   try {
     const body: ApplySuggestionRequest = await request.json()
-    const { type, stepTitle, stepCategory, questionTitle, questionValue, promptVersionId } = body
+    const { stepTitle, stepCategory, questionTitle, questionValue, promptVersionId, skipRegenerate } = body
 
     if (!stepCategory || !questionTitle || !questionValue) {
       return NextResponse.json(
         { error: 'Missing required fields' } as ApiResponse,
         { status: 400 }
       )
-    }
-
-    // If it's a new step, we need to create the step first
-    if (type === 'new_step') {
-      // Check if step already exists
-      const existingStep = await queryOne(
-        'SELECT DISTINCT category FROM knowledge_base WHERE category = $1',
-        [stepCategory]
-      )
-
-      if (!existingStep) {
-        // Get max sort order for steps
-        const maxOrder = await queryOne<{ max: number }>(
-          `SELECT COALESCE(MAX(sort_order), 0) as max FROM (
-            SELECT DISTINCT ON (category) category, sort_order 
-            FROM knowledge_base 
-            ORDER BY category, sort_order
-          ) sub`
-        )
-        
-        // We'll create the step implicitly by adding the first knowledge entry
-        // The wizard will pick it up from the unique categories
-      }
     }
 
     // Get max sort order for this category
@@ -69,39 +47,23 @@ export async function POST(request: NextRequest) {
       [stepCategory, questionTitle, questionValue, questionTitle, newSortOrder]
     )
 
-    // If it's a new step, also insert into wizard_steps if that table exists
-    if (type === 'new_step') {
-      try {
-        // Check if wizard_steps table exists and insert
-        await queryOne(
-          `INSERT INTO wizard_steps (title, category, sort_order)
-           VALUES ($1, $2, (SELECT COALESCE(MAX(sort_order), 0) + 1 FROM wizard_steps))
-           ON CONFLICT (category) DO NOTHING`,
-          [stepTitle, stepCategory]
-        )
-      } catch (e) {
-        // wizard_steps table might not exist, that's okay
-        console.log('wizard_steps table not found, skipping step creation')
-      }
-    }
+    console.log('=== ADD TO EXISTING STEP ===')
+    console.log('stepTitle:', stepTitle, 'stepCategory:', stepCategory)
 
     // Regenerate prompt from updated training data and update the selected version
+    // Skip if skipRegenerate is true (for batch operations)
     let promptUpdated = false
     
-    console.log('=== PROMPT UPDATE DEBUG ===')
-    console.log('promptVersionId:', promptVersionId, 'type:', typeof promptVersionId)
-    
-    if (promptVersionId) {
+    if (promptVersionId && !skipRegenerate) {
+      console.log('Regenerating prompt from updated training data...')
       try {
-        console.log('Regenerating prompt from updated training data...')
-        
         // Generate new prompt from all training data (including the just-added entry)
         const generatedPrompt = await generatePromptFromTraining()
         
         // Update the existing prompt version
         await queryOne(
           `UPDATE prompt_versions 
-           SET system_prompt = $1, user_prompt = $2, updated_at = NOW()
+           SET system_prompt = $1, user_prompt = $2
            WHERE id = $3`,
           [generatedPrompt.systemPrompt, generatedPrompt.userPrompt, promptVersionId]
         )
@@ -112,12 +74,11 @@ export async function POST(request: NextRequest) {
         console.error('Failed to regenerate prompt:', e)
         // Continue anyway - knowledge base was updated
       }
+    } else if (skipRegenerate) {
+      console.log('Skipping prompt regeneration (batch mode)')
     }
 
-    const baseMessage = type === 'new_step' 
-      ? `Created new step "${stepTitle}" with entry "${questionTitle}"`
-      : `Added "${questionTitle}" to "${stepTitle}"`
-    
+    const baseMessage = `Added "${questionTitle}" to "${stepTitle}"`
     const message = promptUpdated 
       ? `${baseMessage}. Prompt updated!`
       : baseMessage

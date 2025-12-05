@@ -8,9 +8,9 @@ export const dynamic = 'force-dynamic'
 
 export interface Suggestion {
   id: string
-  type: 'add_to_existing' | 'new_step'
+  type: 'add_to_existing'
   stepTitle: string
-  stepCategory?: string
+  stepCategory: string
   questionTitle: string
   questionValue: string
   reasoning: string
@@ -47,32 +47,41 @@ export async function POST(request: NextRequest) {
     // Get unique categories (steps) from knowledge base
     const existingCategories = Array.from(new Set(knowledgeBase.map(kb => kb.category)))
 
+    // Fetch wizard steps for proper titles
+    const wizardSteps = await queryMany<{ title: string; category: string }>(
+      'SELECT title, category FROM wizard_steps ORDER BY sort_order'
+    )
+    
+    // Build step info with titles
+    const stepInfo = wizardSteps.map(s => `- **${s.title}** (category: "${s.category}")`).join('\n')
+
     // Build the prompt for generating suggestions
     const systemPrompt = `You are an AI assistant that helps improve customer service agent training data. 
 Your job is to analyze evaluation results and suggest specific improvements to the training knowledge base.
 
-## Current Training Structure
+## AVAILABLE TRAINING WIZARD STEPS
 
-The training wizard has these existing steps/categories:
-${existingCategories.map(cat => `- ${cat}`).join('\n')}
+You MUST use one of these existing steps for your suggestions:
 
-Each step contains questions with key-value pairs that train the AI agent.
+${stepInfo}
 
 ## Current Knowledge Base Entries
 
 ${existingCategories.map(cat => {
   const entries = knowledgeBase.filter(kb => kb.category === cat)
-  return `### ${cat}
+  const stepTitle = wizardSteps.find(s => s.category === cat)?.title || cat
+  return `### ${stepTitle} (${cat})
 ${entries.map(e => `- **${e.key}**: ${e.value}`).join('\n')}`
 }).join('\n\n')}
 
 ## Your Task
 
 Based on the evaluation results, suggest specific improvements to add to the training wizard.
-For each failed rule or issue identified, suggest:
 
-1. **Add to existing step**: If the improvement fits an existing category
-2. **Create new step**: If the improvement needs a new category that doesn't exist
+**CRITICAL: You MUST use existing steps from the list above.** Map each suggestion to the most appropriate existing step.
+- Do NOT create new steps
+- Do NOT invent new category names
+- Pick the best-fit existing step for each suggestion
 
 ## Output Format
 
@@ -83,22 +92,11 @@ Respond with a JSON object:
     {
       "id": "unique_id",
       "type": "add_to_existing",
-      "stepTitle": "Existing Step Name",
-      "stepCategory": "existing_category_slug",
-      "questionTitle": "Short title for the new entry",
+      "stepTitle": "Exact Step Title from list above",
+      "stepCategory": "exact_category_slug_from_list_above",
+      "questionTitle": "short_snake_case_key",
       "questionValue": "The actual content/value to add",
       "reasoning": "Why this improvement is needed",
-      "priority": "high|medium|low",
-      "ruleViolated": "Name of the rule that was violated (if applicable)"
-    },
-    {
-      "id": "unique_id_2",
-      "type": "new_step",
-      "stepTitle": "New Step Name",
-      "stepCategory": "new_category_slug",
-      "questionTitle": "First entry for this new step",
-      "questionValue": "The content for this entry",
-      "reasoning": "Why a new step is needed",
       "priority": "high|medium|low",
       "ruleViolated": "Name of the rule that was violated (if applicable)"
     }
@@ -108,13 +106,13 @@ Respond with a JSON object:
 \`\`\`
 
 Guidelines:
+- **ALWAYS use existing steps** - Pick the closest matching step from the list above
 - **MAXIMUM 3 SUGGESTIONS** - Focus on the most impactful improvements only
 - **NO REPETITION** - If multiple issues stem from the same root cause, consolidate into ONE comprehensive suggestion
 - **ONE suggestion per rule violation** - Don't create separate suggestions for examples, rules, and guidelines about the same issue
+- **questionTitle must be short snake_case** - e.g., "escalation_timeframe", "refund_policy"
 - Only suggest improvements that would prevent the identified issues
 - Be specific and actionable
-- Use existing categories when possible
-- Only suggest new steps when truly necessary
 - Priority should be "high" for rule violations, "medium" for quality issues, "low" for minor improvements
 - Generate unique IDs using format "sug_" + random string
 - If the score is 80+, suggest at most 1 improvement or none at all`

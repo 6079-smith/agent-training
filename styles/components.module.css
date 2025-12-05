@@ -144,6 +144,25 @@
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 }
 
+.quickActionWarning {
+  border-color: rgba(245, 158, 11, 0.5);
+  background: linear-gradient(135deg, rgba(245, 158, 11, 0.08) 0%, rgba(245, 158, 11, 0.02) 100%);
+}
+
+.quickActionWarning:hover {
+  border-color: #f59e0b;
+  box-shadow: 0 4px 12px rgba(245, 158, 11, 0.2);
+}
+
+.quickActionWarning .quickActionIcon {
+  background: rgba(245, 158, 11, 0.15);
+  color: #f59e0b;
+}
+
+.quickActionWarning h3 {
+  color: #f59e0b;
+}
+
 .quickActionIcon {
   width: 48px;
   height: 48px;

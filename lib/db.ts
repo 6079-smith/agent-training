@@ -1,16 +1,19 @@
 import { Pool, QueryResult, QueryResultRow } from 'pg'
 
-// Singleton Postgres pool using DATABASE_URL from environment
-let _pool: Pool | null = null
+// Use globalThis to persist pool across hot reloads in development
+const globalForDb = globalThis as unknown as { pgPool: Pool | undefined }
 
 export function getPool(): Pool {
-  if (_pool) return _pool
+  if (globalForDb.pgPool) return globalForDb.pgPool
+  
   const connectionString = process.env.POSTGRES_URL || process.env.DATABASE_URL
   if (!connectionString) {
     throw new Error('POSTGRES_URL or DATABASE_URL is not set in environment')
   }
-  _pool = new Pool({ connectionString, max: 5 })
-  return _pool
+  
+  console.log('[DB] Creating new connection pool')
+  globalForDb.pgPool = new Pool({ connectionString, max: 5 })
+  return globalForDb.pgPool
 }
 
 /**
@@ -117,7 +120,7 @@ export async function withTransaction<T>(
  * Get connection pool statistics
  */
 export function getPoolStats() {
-  const pool = _pool
+  const pool = globalForDb.pgPool
   if (!pool) return null
   return {
     totalCount: pool.totalCount,
